@@ -21,15 +21,19 @@ const authResult = (user: IUser) => ({
 });
 const normalized = (username: string) => username.toLowerCase();
 
+// Auth service functions for OTP, signup, login, logout, and password reset.
 export const sendSignupOtp = (phoneNumber: string) =>
   otpService.send(phoneNumber, OtpPurpose.SIGNUP);
+// Verify the signup OTP for a phone number.
 export const verifySignupOtp = (phoneNumber: string, code: string) =>
   otpService.verify(phoneNumber, OtpPurpose.SIGNUP, code);
+// Send a password reset OTP only when the account exists.
 export const sendPasswordResetOtp = async (phoneNumber: string) => {
   // Deliberately generic to avoid exposing whether a phone number has an account.
   if (await users().findOne({ phoneNumber }, { projection: { _id: 1 } }))
     await otpService.send(phoneNumber, OtpPurpose.PASSWORD_RESET);
 };
+// Verify a password reset OTP before allowing the password change.
 export const verifyPasswordResetOtp = async (
   phoneNumber: string,
   code: string,
@@ -39,6 +43,7 @@ export const verifyPasswordResetOtp = async (
   await otpService.verify(phoneNumber, OtpPurpose.PASSWORD_RESET, code);
 };
 
+// Create a new user after phone verification.
 export const completeSignup = async (input: {
   phoneNumber: string;
   fullName: string;
@@ -81,6 +86,7 @@ export const completeSignup = async (input: {
   return authResult(user);
 };
 
+// Log in a user with username and password.
 export const login = async ({
   username,
   password,
@@ -95,6 +101,7 @@ export const login = async ({
     throw new AppError("Invalid username or password", 401);
   return authResult(user);
 };
+// Invalidate a user's token by bumping token version.
 export const logout = async (userId: string) => {
   if (!ObjectId.isValid(userId)) throw new AppError("Invalid user token", 401);
   await users().updateOne(
@@ -102,6 +109,7 @@ export const logout = async (userId: string) => {
     { $inc: { tokenVersion: 1 }, $set: { updatedAt: new Date() } },
   );
 };
+// Reset a password after OTP verification.
 export const resetPassword = async (phoneNumber: string, password: string) => {
   await otpService.requireVerified(phoneNumber, OtpPurpose.PASSWORD_RESET);
   const result = await users().updateOne(
@@ -117,11 +125,13 @@ export const resetPassword = async (phoneNumber: string, password: string) => {
   if (!result.matchedCount) throw new AppError("Unable to reset password", 400);
   await otpService.consumeVerified(phoneNumber, OtpPurpose.PASSWORD_RESET);
 };
+// Check whether a username is available.
 export const usernameAvailable = async (username: string) =>
   !(await users().findOne(
     { usernameNormalized: normalized(username) },
     { projection: { _id: 1 } },
   ));
+// Fetch the public profile for the authenticated user.
 export const getUser = async (userId: string) => {
   const user = await users().findOne({ _id: new ObjectId(userId) });
   if (!user) throw new AppError("User not found", 404);

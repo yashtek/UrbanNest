@@ -4,6 +4,7 @@ import { roomService } from "../service/room.service";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
+// Parse a required numeric form field.
 const toNumber = (value: FormDataEntryValue | null, field: string) => {
     if (typeof value !== "string" || value.trim() === "") {
         throw new AppError(`${field} is required`, 400);
@@ -17,6 +18,7 @@ const toNumber = (value: FormDataEntryValue | null, field: string) => {
     return parsed;
 };
 
+// Parse a required string form field.
 const toString = (value: FormDataEntryValue | null, field: string) => {
     if (typeof value !== "string" || value.trim() === "") {
         throw new AppError(`${field} is required`, 400);
@@ -25,6 +27,7 @@ const toString = (value: FormDataEntryValue | null, field: string) => {
     return value;
 };
 
+// Validate room images before upload.
 const getImages = async (formData: FormData) => {
     const files = formData
         .getAll("images")
@@ -47,7 +50,9 @@ const getImages = async (formData: FormData) => {
     return files;
 };
 
+// Room controller for room CRUD and image management.
 class RoomController{
+    // Create a room under a business.
     async create(c:Context){
         const businessId = c.req.param("businessId");
         if (!businessId) {
@@ -69,6 +74,7 @@ class RoomController{
         return c.json(result,201);
     }
 
+    // List all rooms for a business.
     async getAll(c:Context){
         const businessId = c.req.param("businessId");
         if (!businessId) {
@@ -80,6 +86,7 @@ class RoomController{
         return c.json(result);
     }
 
+    // Add new images to a room.
     async addImages(c: Context) {
         const businessId = c.req.param("businessId");
         const roomId = c.req.param("roomId");
@@ -101,6 +108,7 @@ class RoomController{
         return c.json(result, 200);
     }
 
+    // Delete one image from a room.
     async deleteImage(c: Context) {
         const businessId = c.req.param("businessId");
         const roomId = c.req.param("roomId");
@@ -119,6 +127,7 @@ class RoomController{
         return c.json(result);
     }
 
+    // Delete a room by id.
     async delete(c: Context) {
         const businessId = c.req.param("businessId");
         const roomId = c.req.param("roomId");
@@ -132,6 +141,7 @@ class RoomController{
         return c.json(result);
     }
 
+    // Update a room by id.
     async update (c:Context){
         try{
             const businessId = c.req.param("businessId");

@@ -23,16 +23,19 @@ const ok = (
     status,
   );
 
+// Auth controller handlers for signup, login, token, and password flows.
 export const sendSignupOtp = async (c: Context) => {
   const { phoneNumber } = await body(c, phoneSchema);
   await auth.sendSignupOtp(phoneNumber);
   return ok(c, "OTP sent if delivery is available");
 };
+// Verify the OTP sent during signup.
 export const verifySignupOtp = async (c: Context) => {
   const { phoneNumber, otp } = await body(c, verifyOtpSchema);
   await auth.verifySignupOtp(phoneNumber, otp);
   return ok(c, "Phone number verified");
 };
+// Complete user registration after phone verification.
 export const completeSignup = async (c: Context) =>
   ok(
     c,
@@ -40,8 +43,10 @@ export const completeSignup = async (c: Context) =>
     await auth.completeSignup(await body(c, completeSignupSchema)),
     201,
   );
+// Log a user in and issue an access token.
 export const login = async (c: Context) =>
   ok(c, "Login successful", await auth.login(await body(c, loginSchema)));
+// Log the current user out by invalidating their token version.
 export const logout = [
   authMiddleware,
   async (c: Context) => {
@@ -49,11 +54,13 @@ export const logout = [
     return ok(c, "Logged out successfully");
   },
 ] as const;
+// Return the authenticated user's profile.
 export const me = [
   authMiddleware,
   async (c: Context) =>
     ok(c, "Authenticated user", await auth.getUser(c.get("user").userId)),
 ] as const;
+// Validate the current access token and return its expiry.
 export const verifyToken = [
   authMiddleware,
   async (c: Context) => {
@@ -65,6 +72,7 @@ export const verifyToken = [
     });
   },
 ] as const;
+// Check whether a username is available.
 export const checkUsername = async (c: Context) => {
   const { username } = usernameQuerySchema.parse(c.req.query());
   return ok(c, "Username availability checked", {
@@ -72,16 +80,19 @@ export const checkUsername = async (c: Context) => {
     available: await auth.usernameAvailable(username),
   });
 };
+// Send a password reset OTP when the account exists.
 export const sendForgotPasswordOtp = async (c: Context) => {
   const { phoneNumber } = await body(c, phoneSchema);
   await auth.sendPasswordResetOtp(phoneNumber);
   return ok(c, "If that account exists, an OTP has been sent");
 };
+// Verify the password reset OTP before allowing a reset.
 export const verifyForgotPasswordOtp = async (c: Context) => {
   const { phoneNumber, otp } = await body(c, verifyOtpSchema);
   await auth.verifyPasswordResetOtp(phoneNumber, otp);
   return ok(c, "OTP verified. You may now reset your password.");
 };
+// Reset the password after OTP verification.
 export const resetPassword = async (c: Context) => {
   const input = await body(c, resetPasswordSchema);
   await auth.resetPassword(input.phoneNumber, input.password);

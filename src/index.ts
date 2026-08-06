@@ -7,6 +7,7 @@ import { ensureUserIndexes } from "./modals/user.modal";
 import { ensureBusinessIndexes } from "./modals/business.modal";
 import { ensureOtpIndexes } from "./otp/otp.service";
 import roomRoute from "./routes/room.routes";
+import tenantRoutes from "./routes/tenant.routes";
 const app = new Hono();
 await connectDB();
 await ensureUserIndexes();
@@ -14,9 +15,14 @@ await ensureBusinessIndexes();
 await ensureOtpIndexes();
 
 app.onError(errorHandler);
+
+// all routes
 app.route("/auth", authRoutes);
 app.route("/business", businessRoutes);
 app.route("/business", roomRoute)
+app.route("/business",tenantRoutes);
+
+
 app.get("/", (c) => {
   return c.json({
     success: true,

@@ -17,7 +17,9 @@ export interface UpdateBusinessDto {
   template?: BusinessTemplate;
 }
 
+// Business service for CRUD operations on business records.
 export class BusinessService {
+  // Create a new business for an owner.
   async create(data: CreateBusinessDto) {
     if (!BUSINESS_TEMPLATES.includes(data.template)) {
       throw new AppError("Invalid business template", 400);
@@ -43,12 +45,12 @@ export class BusinessService {
     return payload;
   }
 
-  // get all business
+  // Get all businesses for one owner.
   async getAll(owner_id: string) {
     return await businesses().find({ owner_id }).toArray();
   }
 
-  // update business name and template
+  // Update a business name or template.
   async update(id: string, data: UpdateBusinessDto) {
     const updateData: UpdateBusinessDto = {};
 
@@ -72,6 +74,7 @@ export class BusinessService {
     return await businesses().findOne({ _id: new ObjectId(id) });
   }
 
+  // Delete a business by id.
   async delete(id: string) {
     await businesses().deleteOne({
       _id: new ObjectId(id),

@@ -34,11 +34,14 @@ export interface UpdateRoomDto {
   status?: RoomStatus;
 }
 
+// Room service for CRUD, image upload, and room media management.
 class RoomService {
+  // Upload multiple room images.
   async uploadImages(files: File[]): Promise<RoomImageAsset[]> {
     return Promise.all(files.map((file) => this.uploadImage(file)));
   }
 
+  // Upload a single image to Cloudinary.
   private async uploadImage(file: File): Promise<RoomImageAsset> {
     const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -72,6 +75,7 @@ class RoomService {
     });
   }
 
+  // Create a room inside a business.
   async create(businessId: string, data: CreateRoomDto) {
     const payload: IRoom = {
       _id: new ObjectId(),
@@ -94,6 +98,7 @@ class RoomService {
     return payload;
   }
 
+  // List all rooms for a business.
   async getAll(businessId: string) {
     return rooms()
       .find({
@@ -102,6 +107,7 @@ class RoomService {
       .toArray();
   }
 
+  // Add image assets to an existing room.
   async addImages(
     businessId: string,
     roomId: string,
@@ -139,6 +145,7 @@ class RoomService {
     return room;
   }
 
+  // Remove a single room image by public id.
   async deleteImage(
     businessId: string,
     roomId: string,
@@ -182,6 +189,7 @@ class RoomService {
     };
   }
 
+  // Update a room by id.
   async update(
     businessId: string,
     roomId: string,
@@ -219,6 +227,7 @@ class RoomService {
     return room;
   }
 
+  // Delete a room by id.
   async delete(businessId: string, roomId: string) {
     const result = await rooms().deleteOne({
       _id: new ObjectId(roomId),

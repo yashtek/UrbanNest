@@ -2,7 +2,9 @@ import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
 import { businessService } from "../service/business.service";
 
+// Business controller for business CRUD endpoints.
 export class BusinessController {
+    // Create a business for the authenticated user.
     async create(c: Context) {
         try {
             const body = await c.req.json();
@@ -28,6 +30,7 @@ export class BusinessController {
     }
     }
 
+    // List all businesses owned by the authenticated user.
     async getAll(c: Context) {
         const user = c.get("user") as { userId: string };
         const result = await businessService.getAll(user.userId);
@@ -35,6 +38,7 @@ export class BusinessController {
         return c.json(result);
     }
 
+  // Update a business by id.
   async update(c: Context) {
         const id = c.req.param("id");
         if (!id) {
@@ -48,6 +52,7 @@ export class BusinessController {
     return c.json(result);
   }
 
+        // Delete a business by id.
     async delete(c: Context) {
         const id = c.req.param("id");
         if (!id) {
