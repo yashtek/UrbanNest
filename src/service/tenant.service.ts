@@ -51,14 +51,14 @@ export class tenantservice {
       updatedAt: new Date(),
     };
 
-    await tenants().insertOne(payload);
-    return payload;
+    const result  = await tenants().insertOne(payload);
+    return result;
   }
 
   // Update a tenant record within a business.
-  async update(businessId: string, roomId: string, data: updateTenant) {
+  async update(businessId: string, tenantId: string, data: updateTenant) {
     if (data.status && !TENANT_STATUS.includes(data.status)) {
-      throw new AppError("Invalid rent status", 400);
+      throw new AppError("Invalid tenant status", 400);
     }
 
     const payloadToUpdate: Partial<ITenant> = {};
@@ -101,7 +101,7 @@ export class tenantservice {
 
     const result = await tenants().updateOne(
       {
-        _id: new ObjectId(roomId),
+        _id: new ObjectId(tenantId),
         businessId: new ObjectId(businessId),
       },
       {
@@ -117,7 +117,7 @@ export class tenantservice {
     }
 
     const tenant = await tenants().findOne({
-      _id: new ObjectId(roomId),
+      _id: new ObjectId(tenantId),
       businessId: new ObjectId(businessId),
     });
 

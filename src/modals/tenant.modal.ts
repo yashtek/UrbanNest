@@ -1,7 +1,7 @@
 import { Collection, ObjectId } from "mongodb";
 import { getDB } from "../db/db";
 
-export const TENANT_STATUS = ["ACTIVE", "LEFT"] as const;
+export const TENANT_STATUS = ["ACTIVE", "INACTIVE"] as const;
 
 export type TenantStatus = (typeof TENANT_STATUS)[number];
 

@@ -8,6 +8,8 @@ import { ensureBusinessIndexes } from "./modals/business.modal";
 import { ensureOtpIndexes } from "./otp/otp.service";
 import roomRoute from "./routes/room.routes";
 import tenantRoutes from "./routes/tenant.routes";
+import rentRoutes from "./routes/rent.routes";
+import ElectricityRoutes from "./routes/electricity.routes";
 const app = new Hono();
 await connectDB();
 await ensureUserIndexes();
@@ -20,7 +22,9 @@ app.onError(errorHandler);
 app.route("/auth", authRoutes);
 app.route("/business", businessRoutes);
 app.route("/business", roomRoute)
-app.route("/business",tenantRoutes);
+app.route("/business", tenantRoutes);
+app.route("/business", rentRoutes);
+app.route("/business", ElectricityRoutes);
 
 
 app.get("/", (c) => {

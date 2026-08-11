@@ -32,6 +32,7 @@ export interface UpdateRoomDto {
   rent?: number;
   electricity?: number;
   status?: RoomStatus;
+  roomPhotos?: RoomImageAsset[];
 }
 
 // Room service for CRUD, image upload, and room media management.
@@ -93,9 +94,9 @@ class RoomService {
       updatedAt: new Date(),
     };
 
-    await rooms().insertOne(payload);
+    const result = await rooms().insertOne(payload);
 
-    return payload;
+    return result;
   }
 
   // List all rooms for a business.
@@ -195,26 +196,6 @@ class RoomService {
     roomId: string,
     data: UpdateRoomDto,
   ) {
-    if (
-      data.status &&
-      !ROOM_STATUS.includes(data.status)
-    ) {
-      throw new AppError("Invalid room status", 400);
-    }
-
-    await rooms().updateOne(
-      {
-        _id: new ObjectId(roomId),
-        businessId: new ObjectId(businessId),
-      },
-      {
-        $set: {
-          ...data,
-          updatedAt: new Date(),
-        },
-      },
-    );
-
     const room = await rooms().findOne({
       _id: new ObjectId(roomId),
       businessId: new ObjectId(businessId),
@@ -224,7 +205,82 @@ class RoomService {
       throw new AppError("Room not found", 404);
     }
 
-    return room;
+    if (
+      data.status &&
+      !ROOM_STATUS.includes(data.status)
+    ) {
+      throw new AppError("Invalid room status", 400);
+    }
+
+    const updateFields: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+
+    if (data.roomNumber !== undefined) {
+      updateFields.roomNumber = data.roomNumber;
+    }
+
+    if (data.floor !== undefined) {
+      updateFields.floor = data.floor;
+    }
+
+    if (data.capacity !== undefined) {
+      updateFields.capacity = data.capacity;
+    }
+
+    if (data.occupied !== undefined) {
+      updateFields.occupied = data.occupied;
+    }
+
+    if (data.rent !== undefined) {
+      updateFields.rent = data.rent;
+    }
+
+    if (data.electricity !== undefined) {
+      updateFields.electricity = data.electricity;
+    }
+
+    if (data.status !== undefined) {
+      updateFields.status = data.status;
+    }
+
+    if (data.roomPhotos?.length) {
+      updateFields.roomPhotoUrls = data.roomPhotos.map((photo) => photo.url);
+      updateFields.roomPhotoPublicIds = data.roomPhotos.map(
+        (photo) => photo.publicId,
+      );
+    }
+
+    const result = await rooms().updateOne(
+      {
+        _id: new ObjectId(roomId),
+        businessId: new ObjectId(businessId),
+      },
+      {
+        $set: updateFields,
+      },
+    );
+
+    if (!result.matchedCount) {
+      throw new AppError("Room not found", 404);
+    }
+
+    if (data.roomPhotos?.length && room.roomPhotoPublicIds.length) {
+      await Promise.allSettled(
+        room.roomPhotoPublicIds.map((publicId) =>
+          cloudinary.uploader.destroy(publicId, {
+            resource_type: "image",
+          }),
+        ),
+      );
+    }
+
+    const updatedRoom = await rooms().findOne({
+      _id: new ObjectId(roomId),
+      businessId: new ObjectId(businessId),
+    });
+
+    return updatedRoom;
   }
 
   // Delete a room by id.

@@ -27,6 +27,29 @@ const toString = (value: FormDataEntryValue | null, field: string) => {
     return value;
 };
 
+// Parse an optional string form field.
+const toOptionalString = (value: FormDataEntryValue | null) => {
+    if (typeof value !== "string" || value.trim() === "") {
+        return undefined;
+    }
+
+    return value;
+};
+
+// Parse an optional numeric form field.
+const toOptionalNumber = (value: FormDataEntryValue | null, field: string) => {
+    if (typeof value !== "string" || value.trim() === "") {
+        return undefined;
+    }
+
+    const parsed = Number(value);
+    if (Number.isNaN(parsed)) {
+        throw new AppError(`${field} must be a number`, 400);
+    }
+
+    return parsed;
+};
+
 // Validate room images before upload.
 const getImages = async (formData: FormData) => {
     const files = formData
@@ -143,26 +166,47 @@ class RoomController{
 
     // Update a room by id.
     async update (c:Context){
-        try{
-            const businessId = c.req.param("businessId");
-            const roomId = c.req.param("roomId");
+        const businessId = c.req.param("businessId");
+        const roomId = c.req.param("roomId");
 
-            if (!businessId || !roomId) {
-                throw new AppError("businessId and roomId are required", 400);
-            }
+        if (!businessId || !roomId) {
+            throw new AppError("businessId and roomId are required", 400);
+        }
 
-            const body = await c.req.json();
+        const contentType = c.req.header("content-type") ?? "";
 
-            const result = await roomService.update(
-                    businessId,
-                    roomId,
-                    body,
-            );
+        if (
+            contentType.includes("multipart/form-data") ||
+            contentType.includes("application/x-www-form-urlencoded")
+        ) {
+            const formData = await c.req.formData();
+            const images = await getImages(formData);
+
+            const result = await roomService.update(businessId, roomId, {
+                roomNumber: toOptionalString(formData.get("roomNumber")),
+                floor: toOptionalNumber(formData.get("floor"), "floor"),
+                capacity: toOptionalNumber(formData.get("capacity"), "capacity"),
+                occupied: toOptionalNumber(formData.get("occupied"), "occupied"),
+                rent: toOptionalNumber(formData.get("rent"), "rent"),
+                electricity: toOptionalNumber(
+                    formData.get("electricity"),
+                    "electricity",
+                ),
+                status: toOptionalString(formData.get("status")) as
+                    | "FULL"
+                    | "NOT_FULL"
+                    | undefined,
+                roomPhotos: images.length ? await roomService.uploadImages(images) : undefined,
+            });
 
             return c.json(result);
-        }catch(err){
-            throw err;
         }
+
+        const body = await c.req.json();
+
+        const result = await roomService.update(businessId, roomId, body);
+
+        return c.json(result);
     }
 }
 

@@ -8,7 +8,11 @@ export class BusinessController {
     async create(c: Context) {
         try {
             const body = await c.req.json();
-            const user = c.get("user") as { userId: string };
+            const user = c.get("user") as { userId: string } | undefined;
+
+            if (!user?.userId) {
+                throw new AppError("Authentication required", 401);
+            }
 
             if (typeof body?.name !== "string" || typeof body?.template !== "string") {
                 throw new AppError("name and template are required", 400);
