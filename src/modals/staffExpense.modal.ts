@@ -10,6 +10,8 @@ export interface IStaffExpense {
   bonus: number;
   advance: number;
   total: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const staffExpenses = (): Collection<IStaffExpense> =>

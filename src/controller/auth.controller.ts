@@ -6,6 +6,7 @@ import {
   loginSchema,
   phoneSchema,
   resetPasswordSchema,
+  updateProfileSchema,
   usernameQuerySchema,
   verifyOtpSchema,
 } from "../validators/auth.validators";
@@ -59,6 +60,26 @@ export const me = [
   authMiddleware,
   async (c: Context) =>
     ok(c, "Authenticated user", await auth.getUser(c.get("user").userId)),
+] as const;
+
+// Return the authenticated user's profile for the post-login profile screen.
+export const profile = [
+  authMiddleware,
+  async (c: Context) =>
+    ok(c, "Authenticated user", await auth.getProfile(c.get("user").userId)),
+] as const;
+
+// Update the authenticated user's profile.
+export const updateProfile = [
+  authMiddleware,
+  async (c: Context) => {
+    const input = updateProfileSchema.parse(await c.req.json());
+    return ok(
+      c,
+      "Profile updated successfully",
+      await auth.updateProfile(c.get("user").userId, input),
+    );
+  },
 ] as const;
 // Validate the current access token and return its expiry.
 export const verifyToken = [

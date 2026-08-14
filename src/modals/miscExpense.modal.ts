@@ -21,6 +21,8 @@ export interface IExpense {
   amount: number;
   description: string;
   date: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const expenses = (): Collection<IExpense> =>

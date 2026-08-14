@@ -16,6 +16,8 @@ export interface IStaffDuty {
   shift: StaffShift;
   date: Date;
   status: StaffDutyStatus;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const staffDuties = (): Collection<IStaffDuty> =>

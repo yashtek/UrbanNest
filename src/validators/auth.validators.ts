@@ -56,3 +56,42 @@ export const usernameQuerySchema = z.object({
     .max(30)
     .regex(/^[A-Za-z0-9_]+$/),
 });
+
+export const updateProfileSchema = z
+  .object({
+    fullName: z
+      .string()
+      .trim()
+      .min(2, "Full name must be at least 2 characters")
+      .max(100)
+      .optional(),
+    username: z
+      .string()
+      .trim()
+      .min(5, "Username must be at least 5 characters")
+      .max(30)
+      .regex(
+        /^[A-Za-z0-9_]+$/,
+        "Username may contain only letters, numbers, and underscores",
+      )
+      .optional(),
+    email: z
+      .union([
+        z
+          .string()
+          .trim()
+          .toLowerCase()
+          .email("Invalid email address"),
+        z.literal(null),
+      ])
+      .optional(),
+  })
+  .refine(
+    (data) =>
+      data.fullName !== undefined ||
+      data.username !== undefined ||
+      data.email !== undefined,
+    {
+      message: "At least one field is required",
+    },
+  );

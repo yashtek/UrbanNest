@@ -9,6 +9,9 @@ import {
   type RoomStatus,
   rooms,
 } from "../modals/room.modal";
+import { rents } from "../modals/rent.modal";
+import { electricity } from "../modals/electricity.modal";
+import { tenants } from "../modals/tenant.modal";
 
 export interface CreateRoomDto {
   roomNumber: string;
@@ -285,6 +288,23 @@ class RoomService {
 
   // Delete a room by id.
   async delete(businessId: string, roomId: string) {
+
+     // Delete lower-level data first
+      await Promise.all([
+        rents().deleteMany({
+          businessId:new ObjectId(businessId),
+          roomid:new ObjectId(roomId),
+        }),
+        electricity().deleteMany({
+         businessId:new ObjectId(businessId),
+         roomid:new ObjectId(roomId),
+        }),
+        tenants().deleteMany({
+          businessId:new ObjectId(businessId),
+          roomid:new ObjectId(roomId),
+        }),
+      ]);
+      
     const result = await rooms().deleteOne({
       _id: new ObjectId(roomId),
       businessId: new ObjectId(businessId),

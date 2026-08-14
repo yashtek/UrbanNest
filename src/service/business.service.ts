@@ -6,6 +6,10 @@ import {
   type BusinessTemplate,
   type IBusiness,
 } from "../modals/business.modal";
+import { rooms } from "../modals/room.modal";
+import { electricity } from "../modals/electricity.modal";
+import { rents } from "../modals/rent.modal";
+import { tenants } from "../modals/tenant.modal";
 
 export interface CreateBusinessDto {
   owner_id: string;
@@ -73,9 +77,26 @@ export class BusinessService {
   }
 
   async delete(id: string) {
-    await businesses().deleteOne({
+    // Delete lower-level data first
+  await Promise.all([
+    rents().deleteMany({
+      businessId:new ObjectId(id),
+    }),
+    electricity().deleteMany({
+     businessId:new ObjectId(id),
+    }),
+    tenants().deleteMany({
+      businessId:new ObjectId(id),
+    }),
+  ]);
+  
+     await rooms().deleteOne({
+       businessId:new ObjectId(id),
+    })
+     await businesses().deleteOne({
       _id: new ObjectId(id),
     });
+    
 
     return {
       message: "Business deleted successfully",

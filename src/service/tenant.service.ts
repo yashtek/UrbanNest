@@ -6,6 +6,8 @@ import {
   TenantStatus,
 } from "../modals/tenant.modal";
 import { AppError } from "../middleware/error.middleware";
+import { ROOM_STATUS, rooms } from "../modals/room.modal";
+import { rents } from "../modals/rent.modal";
 
 export interface createTenant {
   roomId: string;
@@ -35,10 +37,24 @@ export interface updateTenant {
 export class tenantservice {
   // Create a tenant record for a specific business.
   async create(businessId: string, data: createTenant) {
+    const budinessObjectId = new ObjectId(businessId);
+    const roomObjectId = new ObjectId(data.roomId);
+
+    const room = await rooms().findOne({
+      _id: roomObjectId,
+      businessId: budinessObjectId,
+    });
+    if (!room) {
+      throw new AppError("Room not found", 404);
+    }
+    if (room.occupied >= room.capacity) {
+      throw new AppError("Room is Full", 400);
+    }
+
     const payload: ITenant = {
       _id: new ObjectId(),
-      businessId: new ObjectId(businessId),
-      roomId: new ObjectId(data.roomId),
+      businessId: budinessObjectId,
+      roomId: roomObjectId,
       name: data.name,
       phone: data.phone,
       aadhaar: data.aadhaar,
@@ -51,7 +67,22 @@ export class tenantservice {
       updatedAt: new Date(),
     };
 
-    const result  = await tenants().insertOne(payload);
+    const result = await tenants().insertOne(payload);
+
+    const newOccupied = room.occupied + 1;
+    await rooms().updateOne(
+      {
+        _id: roomObjectId,
+        businessId: budinessObjectId,
+      },
+      {
+        $set: {
+          occupied: newOccupied,
+          status: newOccupied >= room.capacity ? "FULL" : "NOT_FULL",
+          updatedAt: new Date(),
+        },
+      },
+    );
     return result;
   }
 
@@ -152,20 +183,59 @@ export class tenantservice {
     return tenant;
   }
   // Delete a tenant record from a business.
-  async delete(businessId: string, tenantId: string) {
-    const result = await tenants().deleteOne({
-      _id: new ObjectId(tenantId),
-      businessId: new ObjectId(businessId),
-    });
+ async delete(businessId: string, tenantId: string) {
+  const businessObjectId = new ObjectId(businessId);
+  const tenantObjectId = new ObjectId(tenantId);
 
-    if (!result.deletedCount) {
-      throw new AppError("Tenant not found", 404);
-    }
+  // 1. Find tenant belonging to this business
+  const tenant = await tenants().findOne({
+    _id: tenantObjectId,
+    businessId: businessObjectId,
+  });
 
-    return {
-      message: "Tenant deleted successfully",
-    };
+  if (!tenant) {
+    throw new AppError("Tenant not found", 404);
   }
+
+  // 2. Delete all rents associated with tenant
+  await rents().deleteMany({
+    tenantId: tenantObjectId,
+  });
+
+  // 3. Delete tenant
+  await tenants().deleteOne({
+    _id: tenantObjectId,
+    businessId: businessObjectId,
+  });
+
+  // 4. Decrease room occupancy
+  const room = await rooms().findOne({
+    _id: tenant.roomId,
+    businessId: businessObjectId,
+  });
+
+  if (room) {
+    const newOccupied = Math.max(0, room.occupied - 1);
+
+    await rooms().updateOne(
+      {
+        _id: tenant.roomId,
+        businessId: businessObjectId,
+      },
+      {
+        $set: {
+          occupied: newOccupied,
+          status: newOccupied >= room.capacity ? "FULL" : "NOT_FULL",
+          updatedAt: new Date(),
+        },
+      }
+    );
+  }
+
+  return {
+    message: "Tenant deleted successfully",
+  };
+}
 }
 
 export const tenantService = new tenantservice();

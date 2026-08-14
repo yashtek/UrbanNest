@@ -21,6 +21,12 @@ const authResult = (user: IUser) => ({
 });
 const normalized = (username: string) => username.toLowerCase();
 
+export type UpdateProfileInput = {
+  fullName?: string;
+  username?: string;
+  email?: string | null;
+};
+
 // Auth service functions for OTP, signup, login, logout, and password reset.
 export const sendSignupOtp = (phoneNumber: string) =>
   otpService.send(phoneNumber, OtpPurpose.SIGNUP);
@@ -136,4 +142,74 @@ export const getUser = async (userId: string) => {
   const user = await users().findOne({ _id: new ObjectId(userId) });
   if (!user) throw new AppError("User not found", 404);
   return publicUser(user);
+};
+
+// Fetch the authenticated user's profile.
+export const getProfile = getUser;
+
+// Update the authenticated user's profile.
+export const updateProfile = async (userId: string, input: UpdateProfileInput) => {
+  const userObjectId = new ObjectId(userId);
+  const existingUser = await users().findOne({ _id: userObjectId });
+
+  if (!existingUser) {
+    throw new AppError("User not found", 404);
+  }
+
+  const updateFields: Record<string, unknown> = {
+    updatedAt: new Date(),
+    tokenVersion: existingUser.tokenVersion + 1,
+  };
+
+  if (input.fullName !== undefined) {
+    updateFields.fullName = input.fullName;
+  }
+
+  if (input.username !== undefined) {
+    updateFields.username = input.username;
+    updateFields.usernameNormalized = normalized(input.username);
+  }
+
+  if (input.email !== undefined) {
+    if (input.email === null) {
+      updateFields.$unset = { email: "" };
+    } else {
+      updateFields.email = input.email;
+    }
+  }
+
+  try {
+    const result = await users().updateOne(
+      { _id: userObjectId },
+      {
+        $set: Object.fromEntries(
+          Object.entries(updateFields).filter(([key]) => key !== "$unset"),
+        ),
+        ...(updateFields.$unset ? { $unset: updateFields.$unset } : {}),
+      },
+    );
+
+    if (!result.matchedCount) {
+      throw new AppError("User not found", 404);
+    }
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      const field = Object.keys(error.keyPattern ?? error.keyValue ?? {})[0];
+      throw new AppError(
+        field === "usernameNormalized"
+          ? "Username is unavailable"
+          : "Email is already registered",
+        409,
+      );
+    }
+    throw error;
+  }
+
+  const updatedUser = await users().findOne({ _id: userObjectId });
+
+  if (!updatedUser) {
+    throw new AppError("User not found", 404);
+  }
+
+  return authResult(updatedUser);
 };
