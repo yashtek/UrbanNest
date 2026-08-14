@@ -42,10 +42,4 @@ app.get("/", (c) => {
   });
 });
 
-if (import.meta.main) {
-  const port = Number(Bun.env.PORT ?? 3000);
-  Bun.serve({ fetch: app.fetch, port });
-  console.log(`UrbanNest API listening on http://localhost:${port}`);
-}
-
 export default app;
