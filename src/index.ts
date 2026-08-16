@@ -14,6 +14,7 @@ import staffRoutes from "./routes/staff.routes";
 import staffDutyRoutes from "./routes/staffDuty.routes";
 import staffExpenseRoutes from "./routes/staffExpense.routes";
 import expenseRoutes from "./routes/expense.routes";
+import dashboardRoutes from "./routes/dashboard.routes";
 const app = new Hono();
 await connectDB();
 await ensureUserIndexes();
@@ -33,6 +34,7 @@ app.route("/business", staffRoutes);
 app.route("/business", staffDutyRoutes);
 app.route("/business", staffExpenseRoutes);
 app.route("/business", expenseRoutes);
+app.route("/business", dashboardRoutes);
 
 
 app.get("/", (c) => {

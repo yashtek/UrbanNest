@@ -89,7 +89,7 @@ export class BusinessService {
       businessId:new ObjectId(id),
     }),
   ]);
-  
+
      await rooms().deleteOne({
        businessId:new ObjectId(id),
     })

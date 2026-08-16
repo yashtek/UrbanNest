@@ -1,0 +1,1643 @@
+{
+  "info": {
+    "_postman_id": "3b8d8b1c-0f3a-4b6d-9b33-7a5cf0c3a0f1",
+    "name": "UrbanNest API",
+    "description": "UrbanNest REST API collection. Set `baseUrl` to your local or deployed URL and store the logged-in user's access token in `accessToken`. All non-auth routes require a Bearer token.\n\nProtected endpoints:\n- Business\n- Rooms\n- Tenants\n- Rents\n- Electricity\n- Staff\n- Staff duties\n- Staff expenses\n- Misc expenses",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "businessId",
+      "value": ""
+    },
+    {
+      "key": "id",
+      "value": ""
+    },
+    {
+      "key": "roomId",
+      "value": ""
+    },
+    {
+      "key": "tenantId",
+      "value": ""
+    },
+    {
+      "key": "rentId",
+      "value": ""
+    },
+    {
+      "key": "electricityId",
+      "value": ""
+    },
+    {
+      "key": "staffId",
+      "value": ""
+    },
+    {
+      "key": "staffDutyId",
+      "value": ""
+    },
+    {
+      "key": "staffExpenseId",
+      "value": ""
+    },
+    {
+      "key": "expenseId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Signup, login, profile, token, and password reset routes. Use these before calling protected endpoints.",
+      "item": [
+        {
+          "name": "POST Send Signup OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/send-signup-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "send-signup-otp"
+              ]
+            },
+            "description": "Send an OTP to a phone number before signup."
+          }
+        },
+        {
+          "name": "POST Verify Signup OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919876543210\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-signup-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-signup-otp"
+              ]
+            },
+            "description": "Verify the OTP before completing signup."
+          }
+        },
+        {
+          "name": "POST Complete Signup",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919876543210\",\n  \"fullName\": \"Asha Patel\",\n  \"email\": \"asha@example.com\",\n  \"username\": \"asha_p\",\n  \"password\": \"StrongPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/complete-signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "complete-signup"
+              ]
+            },
+            "description": "Create the account after OTP verification."
+          }
+        },
+        {
+          "name": "POST Login",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"asha_p\",\n  \"password\": \"StrongPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Login and receive the user object plus access token. Save the returned token in `accessToken`."
+          }
+        },
+        {
+          "name": "POST Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Invalidate the current access token by bumping token version."
+          }
+        },
+        {
+          "name": "GET Me",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Get the authenticated user's profile."
+          }
+        },
+        {
+          "name": "GET Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
+            },
+            "description": "Get the authenticated user's profile for the post-login profile screen."
+          }
+        },
+        {
+          "name": "PATCH Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Asha P\",\n  \"username\": \"asha_p1\",\n  \"email\": \"asha@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
+            },
+            "description": "Update the authenticated user's profile. Provide at least one field. Set `email` to `null` to remove it. Returns a fresh access token."
+          }
+        },
+        {
+          "name": "GET Verify Token",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verify-token"
+              ]
+            },
+            "description": "Validate the current token and return its expiry time."
+          }
+        },
+        {
+          "name": "GET Check Username",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/check-username?username=asha_p",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "check-username"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "asha_p"
+                }
+              ]
+            },
+            "description": "Check whether a username is available."
+          }
+        },
+        {
+          "name": "POST Forgot Password Send OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password/send-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "send-otp"
+              ]
+            },
+            "description": "Send a password reset OTP if the account exists."
+          }
+        },
+        {
+          "name": "POST Forgot Password Verify OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919876543210\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "verify-otp"
+              ]
+            },
+            "description": "Verify the reset OTP before allowing a password change."
+          }
+        },
+        {
+          "name": "POST Forgot Password Reset",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phoneNumber\": \"+919876543210\",\n  \"password\": \"NewStrongPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password",
+                "reset"
+              ]
+            },
+            "description": "Reset the password after OTP verification."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business",
+      "description": "Authenticated business CRUD routes.",
+      "item": [
+        {
+          "name": "POST Create Business",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Urban Nest PG\",\n  \"template\": \"PG\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business"
+              ]
+            },
+            "description": "Create a business for the authenticated user. Valid templates: PG, FLAT, LIBRARY, HOSTEL, HOTEL."
+          }
+        },
+        {
+          "name": "GET List Businesses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business"
+              ]
+            },
+            "description": "List all businesses owned by the authenticated user."
+          }
+        },
+        {
+          "name": "PUT Update Business",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Urban Nest Hostel\",\n  \"template\": \"HOSTEL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{id}}"
+              ]
+            },
+            "description": "Update a business by its id."
+          }
+        },
+        {
+          "name": "DELETE Business",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{id}}"
+              ]
+            },
+            "description": "Delete a business and its dependent lower-level data."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rooms",
+      "description": "Room CRUD and image management routes.",
+      "item": [
+        {
+          "name": "POST Create Room",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "roomNumber",
+                  "value": "101",
+                  "type": "text"
+                },
+                {
+                  "key": "floor",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "capacity",
+                  "value": "4",
+                  "type": "text"
+                },
+                {
+                  "key": "rent",
+                  "value": "8000",
+                  "type": "text"
+                },
+                {
+                  "key": "electricity",
+                  "value": "1200",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms"
+              ]
+            },
+            "description": "Create a room inside a business. Send multipart form-data. `images` is optional and can be repeated to upload multiple files."
+          }
+        },
+        {
+          "name": "GET List Rooms",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms"
+              ]
+            },
+            "description": "List all rooms for a business."
+          }
+        },
+        {
+          "name": "PATCH Update Room",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomNumber\": \"102\",\n  \"floor\": 1,\n  \"capacity\": 4,\n  \"occupied\": 1,\n  \"rent\": 8500,\n  \"electricity\": 1300,\n  \"status\": \"NOT_FULL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}"
+              ]
+            },
+            "description": "Update a room by id. The controller also accepts multipart form-data if you want to change photos."
+          }
+        },
+        {
+          "name": "POST Add Room Images",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "images"
+              ]
+            },
+            "description": "Upload one or more new room images. Send multipart form-data with `images` file fields."
+          }
+        },
+        {
+          "name": "DELETE Room",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}"
+              ]
+            },
+            "description": "Delete a room by id."
+          }
+        },
+        {
+          "name": "DELETE Room Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"publicId\": \"urbannest/rooms/example-public-id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "images"
+              ]
+            },
+            "description": "Delete a single room image by Cloudinary public id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "description": "Tenant CRUD routes scoped by business and room.",
+      "item": [
+        {
+          "name": "POST Create Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roomId\": \"{{roomId}}\",\n  \"name\": \"Rahul Sharma\",\n  \"phone\": \"+919876543211\",\n  \"aadhaar\": \"123412341234\",\n  \"joiningDate\": \"2026-08-15\",\n  \"leavingDate\": null,\n  \"rent\": 8000,\n  \"securityDeposit\": 20000,\n  \"status\": \"UNPAID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/tenants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "tenants"
+              ]
+            },
+            "description": "Create a tenant for a room in a business. Valid status values: PAID, UNPAID."
+          }
+        },
+        {
+          "name": "GET List Room Tenants",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/tenants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "tenants"
+              ]
+            },
+            "description": "List all tenants in one room."
+          }
+        },
+        {
+          "name": "GET Tenant By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/tenants/{{tenantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "tenants",
+                "{{tenantId}}"
+              ]
+            },
+            "description": "Get a tenant by tenant id."
+          }
+        },
+        {
+          "name": "PATCH Update Tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul S\",\n  \"phone\": \"+919876543212\",\n  \"aadhaar\": \"123412341234\",\n  \"joiningDate\": \"2026-08-15\",\n  \"leavingDate\": null,\n  \"rent\": 8500,\n  \"securityDeposit\": 22000,\n  \"status\": \"PAID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/tenants/{{tenantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "tenants",
+                "{{tenantId}}"
+              ]
+            },
+            "description": "Update a tenant. Set `leavingDate` to `null` to clear it."
+          }
+        },
+        {
+          "name": "DELETE Tenant",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/tenants/{{tenantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "tenants",
+                "{{tenantId}}"
+              ]
+            },
+            "description": "Delete a tenant and its related rent records."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rents",
+      "description": "Rent bill routes for tenants.",
+      "item": [
+        {
+          "name": "POST Create Rent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": \"2026-08\",\n  \"amount\": 8000,\n  \"status\": \"PENDING\",\n  \"paidDate\": null,\n  \"dueDate\": \"2026-08-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/tenants/{{tenantId}}/rents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "tenants",
+                "{{tenantId}}",
+                "rents"
+              ]
+            },
+            "description": "Create a rent record for a tenant. Valid status values: PAID, PENDING, OVERDUE."
+          }
+        },
+        {
+          "name": "PATCH Update Rent",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": \"2026-08\",\n  \"amount\": 8500,\n  \"status\": \"PAID\",\n  \"paidDate\": \"2026-08-15\",\n  \"dueDate\": \"2026-08-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rents/{{rentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rents",
+                "{{rentId}}"
+              ]
+            },
+            "description": "Update a rent record."
+          }
+        },
+        {
+          "name": "GET Rent By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rents/{{rentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rents",
+                "{{rentId}}"
+              ]
+            },
+            "description": "Fetch a rent record by id."
+          }
+        },
+        {
+          "name": "DELETE Rent",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rents/{{rentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rents",
+                "{{rentId}}"
+              ]
+            },
+            "description": "Delete a rent record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Electricity",
+      "description": "Electricity bill routes for rooms.",
+      "item": [
+        {
+          "name": "POST Create Electricity Bill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"readingDate\": \"2026-08-15\",\n  \"previousReading\": 1000,\n  \"currentReading\": 1200,\n  \"costPerunit\": 8,\n  \"amount\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/electricity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "electricity"
+              ]
+            },
+            "description": "Create an electricity reading for a room. The server calculates the final amount from the readings and cost per unit."
+          }
+        },
+        {
+          "name": "PATCH Update Electricity Bill",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"readingDate\": \"2026-08-16\",\n  \"previousReading\": 1200,\n  \"currentReading\": 1400,\n  \"costPerunit\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/electricity/{{electricityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "electricity",
+                "{{electricityId}}"
+              ]
+            },
+            "description": "Update a particular electricity record."
+          }
+        },
+        {
+          "name": "GET Latest Electricity By Room",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/electricity/latest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "electricity",
+                "latest"
+              ]
+            },
+            "description": "Get the latest electricity reading for a room."
+          }
+        },
+        {
+          "name": "GET All Electricity By Room",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/electricity",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "electricity"
+              ]
+            },
+            "description": "Get all electricity records for a room."
+          }
+        },
+        {
+          "name": "DELETE Electricity Bill",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/rooms/{{roomId}}/electricity/{{electricityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "rooms",
+                "{{roomId}}",
+                "electricity",
+                "{{electricityId}}"
+              ]
+            },
+            "description": "Delete a particular electricity record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "description": "Staff CRUD routes.",
+      "item": [
+        {
+          "name": "POST Create Staff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Suresh\",\n  \"phone\": \"+919876543213\",\n  \"role\": \"COOK\",\n  \"salary\": 18000,\n  \"joiningDate\": \"2026-08-15\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staffs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staffs"
+              ]
+            },
+            "description": "Create a staff member. Valid roles: COOK, CLEANER."
+          }
+        },
+        {
+          "name": "GET List Staff",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staffs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staffs"
+              ]
+            },
+            "description": "List all staff for a business."
+          }
+        },
+        {
+          "name": "GET Staff By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staffs/{{staffId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staffs",
+                "{{staffId}}"
+              ]
+            },
+            "description": "Get a staff member by id."
+          }
+        },
+        {
+          "name": "PATCH Update Staff",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Suresh Kumar\",\n  \"phone\": \"+919876543214\",\n  \"role\": \"CLEANER\",\n  \"salary\": 20000,\n  \"joiningDate\": \"2026-08-15\",\n  \"isActive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staffs/{{staffId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staffs",
+                "{{staffId}}"
+              ]
+            },
+            "description": "Update staff fields. Valid roles: COOK, CLEANER."
+          }
+        },
+        {
+          "name": "DELETE Staff",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staffs/{{staffId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staffs",
+                "{{staffId}}"
+              ]
+            },
+            "description": "Delete a staff member and their related duty and expense records."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff Duties",
+      "description": "Daily staff duty tracking routes.",
+      "item": [
+        {
+          "name": "POST Create Staff Duty",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"staffId\": \"{{staffId}}\",\n  \"shift\": \"MORNING\",\n  \"date\": \"2026-08-15\",\n  \"status\": \"PRESENT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-duties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-duties"
+              ]
+            },
+            "description": "Create a duty record. Valid shifts: MORNING, AFTERNOON, NIGHT. Valid statuses: PRESENT, ABSENT, LEAVE."
+          }
+        },
+        {
+          "name": "GET List Staff Duties",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-duties",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-duties"
+              ]
+            },
+            "description": "List all staff duty records for a business."
+          }
+        },
+        {
+          "name": "GET Staff Duty By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-duties/{{staffDutyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-duties",
+                "{{staffDutyId}}"
+              ]
+            },
+            "description": "Get a staff duty record by id."
+          }
+        },
+        {
+          "name": "PATCH Update Staff Duty",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"staffId\": \"{{staffId}}\",\n  \"shift\": \"AFTERNOON\",\n  \"date\": \"2026-08-16\",\n  \"status\": \"ABSENT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-duties/{{staffDutyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-duties",
+                "{{staffDutyId}}"
+              ]
+            },
+            "description": "Update a staff duty record."
+          }
+        },
+        {
+          "name": "DELETE Staff Duty",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-duties/{{staffDutyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-duties",
+                "{{staffDutyId}}"
+              ]
+            },
+            "description": "Delete a staff duty record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Staff Expenses",
+      "description": "Salary, bonus, and advance tracking for staff.",
+      "item": [
+        {
+          "name": "POST Create Staff Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"staffId\": \"{{staffId}}\",\n  \"month\": \"2026-08\",\n  \"salary\": 18000,\n  \"bonus\": 2000,\n  \"advance\": 1000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-expenses"
+              ]
+            },
+            "description": "Create a staff expense record. `total` is calculated by the service as salary + bonus - advance."
+          }
+        },
+        {
+          "name": "GET List Staff Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-expenses"
+              ]
+            },
+            "description": "List all staff expense records for a business."
+          }
+        },
+        {
+          "name": "GET Staff Expense By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-expenses/{{staffExpenseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-expenses",
+                "{{staffExpenseId}}"
+              ]
+            },
+            "description": "Get a staff expense record by id."
+          }
+        },
+        {
+          "name": "PATCH Update Staff Expense",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"staffId\": \"{{staffId}}\",\n  \"month\": \"2026-09\",\n  \"salary\": 19000,\n  \"bonus\": 2500,\n  \"advance\": 500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-expenses/{{staffExpenseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-expenses",
+                "{{staffExpenseId}}"
+              ]
+            },
+            "description": "Update a staff expense record. Total is recalculated automatically."
+          }
+        },
+        {
+          "name": "DELETE Staff Expense",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/staff-expenses/{{staffExpenseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "staff-expenses",
+                "{{staffExpenseId}}"
+              ]
+            },
+            "description": "Delete a staff expense record."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Misc Expenses",
+      "description": "General expense tracking routes.",
+      "item": [
+        {
+          "name": "POST Create Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"CLEANING\",\n  \"amount\": 1200,\n  \"description\": \"Monthly cleaning supplies\",\n  \"date\": \"2026-08-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "expenses"
+              ]
+            },
+            "description": "Create a general expense. Valid categories: ELECTRICITY, CLEANING, INTERNET, REPAIR, FOOD, WATER, STAFF, OTHER."
+          }
+        },
+        {
+          "name": "GET List Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "expenses"
+              ]
+            },
+            "description": "List all general expenses for a business."
+          }
+        },
+        {
+          "name": "GET Expense By Id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/expenses/{{expenseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "expenses",
+                "{{expenseId}}"
+              ]
+            },
+            "description": "Get a general expense by id."
+          }
+        },
+        {
+          "name": "PATCH Update Expense",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"OTHER\",\n  \"amount\": 1500,\n  \"description\": \"Updated expense description\",\n  \"date\": \"2026-08-16\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/expenses/{{expenseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "expenses",
+                "{{expenseId}}"
+              ]
+            },
+            "description": "Update a general expense."
+          }
+        },
+        {
+          "name": "DELETE Expense",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/business/{{businessId}}/expenses/{{expenseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "business",
+                "{{businessId}}",
+                "expenses",
+                "{{expenseId}}"
+              ]
+            },
+            "description": "Delete a general expense."
+          }
+        }
+      ]
+    }
+  ]
+}
