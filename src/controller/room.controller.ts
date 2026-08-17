@@ -76,26 +76,25 @@ const getImages = async (formData: FormData) => {
 // Room controller for room CRUD and image management.
 class RoomController{
     // Create a room under a business.
-    async create(c:Context){
-        const businessId = c.req.param("businessId");
-        if (!businessId) {
-            throw new AppError("businessId is required", 400);
+   async create(c: Context) {
+    const businessId = c.req.param("businessId");
+
+    if (!businessId) {
+        throw new AppError("businessId is required", 400);
     }
 
-        const formData = await c.req.formData();
-        const images = await getImages(formData);
+    const body = await c.req.json();
 
-        const result = await roomService.create(businessId, {
-            roomNumber: toString(formData.get("roomNumber"), "roomNumber"),
-            floor: toNumber(formData.get("floor"), "floor"),
-            capacity: toNumber(formData.get("capacity"), "capacity"),
-            rent: toNumber(formData.get("rent"), "rent"),
-            electricity: toNumber(formData.get("electricity"), "electricity"),
-            roomPhotos: images.length ? await roomService.uploadImages(images) : [],
-        });
+    const result = await roomService.create(businessId, {
+        roomNumber: toString(body.roomNumber, "roomNumber"),
+        floor: toNumber(body.floor, "floor"),
+        capacity: toNumber(body.capacity, "capacity"),
+        rent: toNumber(body.rent, "rent"),
+        electricity: toNumber(body.electricity, "electricity"),
+    });
 
-        return c.json(result,201);
-    }
+    return c.json(result, 201);
+}
 
     // List all rooms for a business.
     async getAll(c:Context){

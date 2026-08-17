@@ -14,8 +14,6 @@ export interface IRoom {
   occupied: number;
   rent: number;
   electricity: number;
-  roomPhotoUrls: string[];
-  roomPhotoPublicIds: string[];
   status: RoomStatus;
   createdAt: Date;
   updatedAt: Date;

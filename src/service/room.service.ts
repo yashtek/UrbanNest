@@ -19,7 +19,7 @@ export interface CreateRoomDto {
   capacity: number;
   rent: number;
   electricity: number;
-  roomPhotos?: RoomImageAsset[];
+ 
 }
 
 export interface RoomImageAsset {
@@ -35,49 +35,49 @@ export interface UpdateRoomDto {
   rent?: number;
   electricity?: number;
   status?: RoomStatus;
-  roomPhotos?: RoomImageAsset[];
+ 
 }
 
 // Room service for CRUD, image upload, and room media management.
 class RoomService {
   // Upload multiple room images.
-  async uploadImages(files: File[]): Promise<RoomImageAsset[]> {
-    return Promise.all(files.map((file) => this.uploadImage(file)));
-  }
+  // async uploadImages(files: File[]): Promise<RoomImageAsset[]> {
+  //   return Promise.all(files.map((file) => this.uploadImage(file)));
+  // }
 
   // Upload a single image to Cloudinary.
-  private async uploadImage(file: File): Promise<RoomImageAsset> {
-    const buffer = Buffer.from(await file.arrayBuffer());
+  // private async uploadImage(file: File): Promise<RoomImageAsset> {
+  //   const buffer = Buffer.from(await file.arrayBuffer());
 
-    return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "urbannest/rooms",
-          resource_type: "image",
-          unique_filename: true,
-          use_filename: true,
-        },
-        (error, result) => {
-          if (error) {
-            reject(new AppError(error.message || "Image upload failed", 500));
-            return;
-          }
+  //   return new Promise((resolve, reject) => {
+  //     const uploadStream = cloudinary.uploader.upload_stream(
+  //       {
+  //         folder: "urbannest/rooms",
+  //         resource_type: "image",
+  //         unique_filename: true,
+  //         use_filename: true,
+  //       },
+  //       (error, result) => {
+  //         if (error) {
+  //           reject(new AppError(error.message || "Image upload failed", 500));
+  //           return;
+  //         }
 
-          if (!result?.secure_url || !result.public_id) {
-            reject(new AppError("Image upload failed", 500));
-            return;
-          }
+  //         if (!result?.secure_url || !result.public_id) {
+  //           reject(new AppError("Image upload failed", 500));
+  //           return;
+  //         }
 
-          resolve({
-            url: result.secure_url,
-            publicId: result.public_id,
-          });
-        },
-      );
+  //         resolve({
+  //           url: result.secure_url,
+  //           publicId: result.public_id,
+  //         });
+  //       },
+  //     );
 
-      uploadStream.end(buffer);
-    });
-  }
+  //     uploadStream.end(buffer);
+  //   });
+  // }
 
   // Create a room inside a business.
   async create(businessId: string, data: CreateRoomDto) {
@@ -90,8 +90,8 @@ class RoomService {
       occupied: 0,
       rent: data.rent,
       electricity: data.electricity,
-      roomPhotoUrls: data.roomPhotos?.map((photo) => photo.url) ?? [],
-      roomPhotoPublicIds: data.roomPhotos?.map((photo) => photo.publicId) ?? [],
+      // roomPhotoUrls: data.roomPhotos?.map((photo) => photo.url) ?? [],
+      // roomPhotoPublicIds: data.roomPhotos?.map((photo) => photo.publicId) ?? [],
       status: "NOT_FULL",
       createdAt: new Date(),
       updatedAt: new Date(),
