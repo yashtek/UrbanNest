@@ -1,151 +1,129 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
-import { tenantService } from "../service/tenant.service";
+import { TENANT_STATUS, type TenantStatus } from "../modals/tenant.modal";
+import { tenantService, type updateTenant } from "../service/tenant.service";
 
-// Tenant controller for request handling around tenant CRUD.
-class tenatController{
-    // Create a tenant under a business.
-    async create(c:Context){
-        try {
-            const businessId = c.req.param("businessId");
-            if (!businessId) {
-                throw new AppError("businessId is required", 400);
-            }
+const requiredString = (value: unknown, field: string) => {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new AppError(`${field} is required`, 400);
+  }
+  return value.trim();
+};
 
-            const body = await c.req.json();
+const requiredNumber = (value: unknown, field: string) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new AppError(`${field} must be a number`, 400);
+  }
+  return value;
+};
 
-            if (typeof body?.roomId !== "string" || !body.roomId.trim()) {
-                throw new AppError("roomId is required", 400);
-            }
+const requiredDate = (value: unknown, field: string) => {
+  if (typeof value !== "string" && !(value instanceof Date)) {
+    throw new AppError(`${field} is required`, 400);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new AppError(`${field} must be a valid date`, 400);
+  }
+  return date;
+};
 
-            if (typeof body?.joiningDate !== "string" || !body.joiningDate.trim()) {
-                throw new AppError("joiningDate is required", 400);
-            }
+const statusValue = (value: unknown): TenantStatus => {
+  if (typeof value !== "string" || !TENANT_STATUS.includes(value as TenantStatus)) {
+    throw new AppError("status is invalid", 400);
+  }
+  return value as TenantStatus;
+};
 
-            const result = await tenantService.create(businessId, {
-                roomId: body.roomId,
-                name: body.name,
-                phone: body.phone,
-                aadhaar: body.aadhaar,
-                joiningDate: body.joiningDate,
-                leavingDate: body.leavingDate,
-                rent: body.rent,
-                securityDeposit: body.securityDeposit,
-                status: body.status,
-            })
+class TenantController {
+  async create(c: Context) {
+    const businessId = c.req.param("businessId");
+    if (!businessId) throw new AppError("businessId is required", 400);
 
-            return c.json(result, 201);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
+    const body = await c.req.json();
+    const result = await tenantService.create(businessId, {
+      roomId: requiredString(body.roomId, "roomId"),
+      name: requiredString(body.name, "name"),
+      phone: requiredString(body.phone, "phone"),
+      aadhaar: requiredString(body.aadhaar, "aadhaar"),
+      joiningDate: requiredDate(body.joiningDate, "joiningDate"),
+      leavingDate:
+        body.leavingDate === undefined
+          ? undefined
+          : requiredDate(body.leavingDate, "leavingDate"),
+      rent: requiredNumber(body.rent, "rent"),
+      securityDeposit: requiredNumber(body.securityDeposit, "securityDeposit"),
+      month: requiredString(body.month, "month"),
+      amount: requiredNumber(body.amount, "amount"),
+      paidDate:
+        body.paidDate === undefined
+          ? undefined
+          : requiredDate(body.paidDate, "paidDate"),
+      dueDate: requiredDate(body.dueDate, "dueDate"),
+      status: statusValue(body.status),
+    });
 
-            throw new AppError("Invalid request body", 400);
-        }
+    return c.json(result, 201);
+  }
+
+  async update(c: Context) {
+    const businessId = c.req.param("businessId");
+    const tenantId = c.req.param("tenantId");
+    if (!businessId || !tenantId) {
+      throw new AppError("businessId and tenantId are required", 400);
     }
 
-    // Update a tenant under a business.
-    async update(c:Context){
-        try {
-            const businessId = c.req.param("businessId");
-            const tenantId = c.req.param("tenantId");
+    const body = await c.req.json();
+    const data: updateTenant = {};
 
-            if (!businessId || !tenantId) {
-                    throw new AppError("businessId and tenantId are required", 400);
-                }
-
-            const body = await c.req.json();
-
-            if (body?.joiningDate !== undefined && typeof body.joiningDate !== "string") {
-                throw new AppError("joiningDate must be a string", 400);
-            }
-
-            if (body?.leavingDate !== undefined && body.leavingDate !== null && typeof body.leavingDate !== "string") {
-                throw new AppError("leavingDate must be a string or null", 400);
-            }
-
-            const result = await tenantService.update(
-                businessId,
-                tenantId,
-                body,
-
-            );
-
-            return c.json(result); 
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-
-            throw new AppError("Invalid request body", 400);
-        }
+    if (body.name !== undefined) data.name = requiredString(body.name, "name");
+    if (body.phone !== undefined) data.phone = requiredString(body.phone, "phone");
+    if (body.aadhaar !== undefined) data.aadhaar = requiredString(body.aadhaar, "aadhaar");
+    if (body.joiningDate !== undefined) data.joiningDate = requiredDate(body.joiningDate, "joiningDate");
+    if (body.leavingDate !== undefined) {
+      data.leavingDate = body.leavingDate === null ? null : requiredDate(body.leavingDate, "leavingDate");
     }
-
-    // List tenants for one room inside a business.
-    async getAll(c: Context) {
-        try {
-            const businessId = c.req.param("businessId");
-            const roomId = c.req.param("roomId");
-
-            if (!businessId || !roomId) {
-                throw new AppError("businessId and roomId are required", 400);
-            }
-
-            const result = await tenantService.getAll(businessId, roomId);
-
-            return c.json(result);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-
-            throw new AppError("Unable to fetch tenants", 400);
-        }
+    if (body.rent !== undefined) data.rent = requiredNumber(body.rent, "rent");
+    if (body.securityDeposit !== undefined) {
+      data.securityDeposit = requiredNumber(body.securityDeposit, "securityDeposit");
     }
-
-    // Fetch a single tenant by tenant id inside a business.
-    async getById(c: Context) {
-        try {
-            const businessId = c.req.param("businessId");
-            const tenantId = c.req.param("tenantId");
-
-            if (!businessId || !tenantId) {
-                throw new AppError("businessId and tenantId are required", 400);
-            }
-
-            const result = await tenantService.getById(businessId, tenantId);
-
-            return c.json(result);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-
-            throw new AppError("Unable to fetch tenant", 400);
-        }
+    if (body.month !== undefined) data.month = requiredString(body.month, "month");
+    if (body.amount !== undefined) data.amount = requiredNumber(body.amount, "amount");
+    if (body.paidDate !== undefined) {
+      data.paidDate = body.paidDate === null ? null : requiredDate(body.paidDate, "paidDate");
     }
+    if (body.dueDate !== undefined) data.dueDate = requiredDate(body.dueDate, "dueDate");
+    if (body.status !== undefined) data.status = statusValue(body.status);
 
-    // Delete a tenant from a business.
-    async delete(c: Context) {
-        try {
-            const businessId = c.req.param("businessId");
-            const tenantId = c.req.param("tenantId");
+    return c.json(await tenantService.update(businessId, tenantId, data));
+  }
 
-            if (!businessId || !tenantId) {
-                throw new AppError("businessId and tenantId are required", 400);
-            }
-
-            const result = await tenantService.delete(businessId, tenantId);
-
-            return c.json(result);
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-
-            throw new AppError("Unable to delete tenant", 400);
-        }
+  async getAll(c: Context) {
+    const businessId = c.req.param("businessId");
+    const roomId = c.req.param("roomId");
+    if (!businessId || !roomId) {
+      throw new AppError("businessId and roomId are required", 400);
     }
+    return c.json(await tenantService.getAll(businessId, roomId));
+  }
+
+  async getById(c: Context) {
+    const businessId = c.req.param("businessId");
+    const tenantId = c.req.param("tenantId");
+    if (!businessId || !tenantId) {
+      throw new AppError("businessId and tenantId are required", 400);
+    }
+    return c.json(await tenantService.getById(businessId, tenantId));
+  }
+
+  async delete(c: Context) {
+    const businessId = c.req.param("businessId");
+    const tenantId = c.req.param("tenantId");
+    if (!businessId || !tenantId) {
+      throw new AppError("businessId and tenantId are required", 400);
+    }
+    return c.json(await tenantService.delete(businessId, tenantId));
+  }
 }
 
-export const tenantController = new tenatController();
+export const tenantController = new TenantController();

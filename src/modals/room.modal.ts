@@ -13,7 +13,12 @@ export interface IRoom {
   capacity: number;
   occupied: number;
   rent: number;
-  electricity: number;
+  readingDate: Date;
+  previousReading: number;
+  currentReading: number;
+  unitUsed: number;
+  costPerunit: number;
+  amount: number;
   status: RoomStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -21,3 +26,9 @@ export interface IRoom {
 
 export const rooms = (): Collection<IRoom> =>
   getDB().collection<IRoom>("rooms");
+
+export const ensureRoomIndexes = () =>
+  rooms().createIndex(
+    { businessId: 1, roomNumber: 1 },
+    { unique: true, name: "unique_room_number_per_business" },
+  );

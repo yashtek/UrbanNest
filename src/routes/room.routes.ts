@@ -20,19 +20,9 @@ roomRoute.patch(
   (c) => roomController.update(c),
 );
 
-roomRoute.post(
-  "/:businessId/rooms/:roomId/images", authMiddleware,
-  (c) => roomController.addImages(c),
-);
-
 roomRoute.delete(
   "/:businessId/rooms/:roomId", authMiddleware,
   (c) => roomController.delete(c),
-);
-
-roomRoute.delete(
-  "/:businessId/rooms/:roomId/images", authMiddleware,
-  (c) => roomController.deleteImage(c),
 );
 
 export default roomRoute;

@@ -8,6 +8,7 @@ import {
 import { AppError } from "../middleware/error.middleware";
 import { ROOM_STATUS, rooms } from "../modals/room.modal";
 import { rents } from "../modals/rent.modal";
+import { distributeRoomElectricity } from "./tenant-electricity.service";
 
 export interface createTenant {
   roomId: string;
@@ -18,6 +19,10 @@ export interface createTenant {
   leavingDate?: string | Date;
   rent: number;
   securityDeposit: number;
+  month: string;
+  amount: number;
+  paidDate?: string | Date;
+  dueDate: string | Date;
   status: TenantStatus;
 }
 
@@ -30,6 +35,10 @@ export interface updateTenant {
   leavingDate?: string | Date | null;
   rent?: number;
   securityDeposit?: number;
+  month?: string;
+  amount?: number;
+  paidDate?: string | Date | null;
+  dueDate?: string | Date;
   status?: TenantStatus;
 }
 
@@ -62,12 +71,17 @@ export class tenantservice {
       leavingDate: data.leavingDate ? new Date(data.leavingDate) : undefined,
       rent: data.rent,
       securityDeposit: data.securityDeposit,
+      month: data.month,
+      amount: data.amount,
+      paidDate: data.paidDate ? new Date(data.paidDate) : undefined,
+      dueDate: new Date(data.dueDate),
+      electricity: 0,
       status: data.status,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    const result = await tenants().insertOne(payload);
+    await tenants().insertOne(payload);
 
     const newOccupied = room.occupied + 1;
     await rooms().updateOne(
@@ -83,7 +97,12 @@ export class tenantservice {
         },
       },
     );
-    return result;
+
+    await distributeRoomElectricity(budinessObjectId, roomObjectId);
+    return tenants().findOne({
+      _id: payload._id,
+      businessId: budinessObjectId,
+    });
   }
 
   // Update a tenant record within a business.
@@ -126,6 +145,22 @@ export class tenantservice {
       payloadToUpdate.securityDeposit = data.securityDeposit;
     }
 
+    if (data.month !== undefined) {
+      payloadToUpdate.month = data.month;
+    }
+
+    if (data.amount !== undefined) {
+      payloadToUpdate.amount = data.amount;
+    }
+
+    if (data.paidDate !== undefined && data.paidDate !== null) {
+      payloadToUpdate.paidDate = new Date(data.paidDate);
+    }
+
+    if (data.dueDate !== undefined) {
+      payloadToUpdate.dueDate = new Date(data.dueDate);
+    }
+
     if (data.status !== undefined) {
       payloadToUpdate.status = data.status;
     }
@@ -140,7 +175,16 @@ export class tenantservice {
           updatedAt: new Date(),
           ...payloadToUpdate,
         },
-        ...(data.leavingDate === null ? { $unset: { leavingDate: "" } } : {}),
+        ...(
+          data.leavingDate === null || data.paidDate === null
+            ? {
+                $unset: {
+                  ...(data.leavingDate === null ? { leavingDate: "" } : {}),
+                  ...(data.paidDate === null ? { paidDate: "" } : {}),
+                },
+              }
+            : {}
+        ),
       },
     );
     if (!result.matchedCount) {
@@ -230,6 +274,8 @@ export class tenantservice {
         },
       }
     );
+
+    await distributeRoomElectricity(businessObjectId, tenant.roomId);
   }
 
   return {

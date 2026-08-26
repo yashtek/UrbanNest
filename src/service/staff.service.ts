@@ -1,6 +1,17 @@
 import { ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
-import { staffs, type IStaff, ROLE, type STAFFROLE } from "../modals/staff.modal";
+import {
+  staffs,
+  type IStaff,
+  ROLE,
+  type STAFFROLE,
+  STAFF_DUTY_STATUS,
+  type StaffDutyStatus,
+  STAFF_SHIFTS,
+  type StaffShift,
+  STAFF_SALARY,
+  type StaffSalary,
+} from "../modals/staff.modal";
 import { staffDuties } from "../modals/staffDuty.modal";
 import { staffExpenses } from "../modals/staffExpense.modal";
 
@@ -11,6 +22,10 @@ export interface CreateStaffDto {
   salary: number;
   joiningDate: string | Date;
   isActive: boolean;
+  shift: StaffShift;
+  date: string | Date;
+  status: StaffDutyStatus;
+  staffSalary: StaffSalary;
 }
 
 export interface UpdateStaffDto {
@@ -20,12 +35,28 @@ export interface UpdateStaffDto {
   salary?: number;
   joiningDate?: string | Date;
   isActive?: boolean;
+  shift?: StaffShift;
+  date?: string | Date;
+  status?: StaffDutyStatus;
+  staffSalary?: StaffSalary;
 }
 
 class StaffService {
   async create(businessId: string, data: CreateStaffDto) {
     if (!ROLE.includes(data.role)) {
       throw new AppError("Invalid staff role", 400);
+    }
+
+    if (!STAFF_SHIFTS.includes(data.shift)) {
+      throw new AppError("Invalid staff shift", 400);
+    }
+
+    if (!STAFF_DUTY_STATUS.includes(data.status)) {
+      throw new AppError("Invalid staff duty status", 400);
+    }
+
+    if (!STAFF_SALARY.includes(data.staffSalary)) {
+      throw new AppError("Invalid staff salary status", 400);
     }
 
     const payload: IStaff = {
@@ -37,6 +68,10 @@ class StaffService {
       salary: data.salary,
       joiningDate: new Date(data.joiningDate),
       isActive: data.isActive,
+      shift: data.shift,
+      date: new Date(data.date),
+      status: data.status,
+      staffSalary: data.staffSalary,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -70,6 +105,18 @@ class StaffService {
       throw new AppError("Invalid staff role", 400);
     }
 
+    if (data.shift !== undefined && !STAFF_SHIFTS.includes(data.shift)) {
+      throw new AppError("Invalid staff shift", 400);
+    }
+
+    if (data.status !== undefined && !STAFF_DUTY_STATUS.includes(data.status)) {
+      throw new AppError("Invalid staff duty status", 400);
+    }
+
+    if (data.staffSalary !== undefined && !STAFF_SALARY.includes(data.staffSalary)) {
+      throw new AppError("Invalid staff salary status", 400);
+    }
+
     const updateFields: Record<string, unknown> = {
       updatedAt: new Date(),
     };
@@ -96,6 +143,22 @@ class StaffService {
 
     if (data.isActive !== undefined) {
       updateFields.isActive = data.isActive;
+    }
+
+    if (data.shift !== undefined) {
+      updateFields.shift = data.shift;
+    }
+
+    if (data.date !== undefined) {
+      updateFields.date = new Date(data.date);
+    }
+
+    if (data.status !== undefined) {
+      updateFields.status = data.status;
+    }
+
+    if (data.staffSalary !== undefined) {
+      updateFields.staffSalary = data.staffSalary;
     }
 
     const result = await staffs().updateOne(

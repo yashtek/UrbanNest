@@ -7,6 +7,7 @@ import { ensureUserIndexes } from "./modals/user.modal";
 import { ensureBusinessIndexes } from "./modals/business.modal";
 import { ensureOtpIndexes } from "./otp/otp.service";
 import roomRoute from "./routes/room.routes";
+import { ensureRoomIndexes } from "./modals/room.modal";
 import tenantRoutes from "./routes/tenant.routes";
 import rentRoutes from "./routes/rent.routes";
 import ElectricityRoutes from "./routes/electricity.routes";
@@ -20,6 +21,7 @@ await connectDB();
 await ensureUserIndexes();
 await ensureBusinessIndexes();
 await ensureOtpIndexes();
+await ensureRoomIndexes();
 
 app.onError(errorHandler);
 
