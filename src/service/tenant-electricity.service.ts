@@ -6,16 +6,29 @@ export const distributeRoomElectricity = async (
   businessId: ObjectId,
   roomId: ObjectId,
 ) => {
-  const [room, tenantCount] = await Promise.all([
+  const [room, roomTenants] = await Promise.all([
     rooms().findOne({ _id: roomId, businessId }),
-    tenants().countDocuments({ businessId, roomId }),
+    tenants()
+      .find({ businessId, roomId })
+      .project<{ _id: ObjectId }>({ _id: 1 })
+      .toArray(),
   ]);
 
-  if (!room || tenantCount === 0) return;
+  if (!room || roomTenants.length === 0) return;
 
-  const electricity = room.amount / tenantCount;
+  const electricityPerTenant = room.amount / roomTenants.length;
+
   await tenants().updateMany(
-    { businessId, roomId },
-    { $set: { electricity, updatedAt: new Date() } },
+    {
+      businessId,
+      roomId,
+      _id: { $in: roomTenants.map((tenant) => tenant._id) },
+    },
+    {
+      $set: {
+        electricity: electricityPerTenant,
+        updatedAt: new Date(),
+      },
+    },
   );
 };
