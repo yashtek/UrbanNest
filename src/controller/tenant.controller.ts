@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
-import { TENANT_STATUS, type TenantStatus } from "../modals/tenant.modal";
 import { tenantService, type updateTenant } from "../service/tenant.service";
 
 const requiredString = (value: unknown, field: string) => {
@@ -28,13 +27,6 @@ const requiredDate = (value: unknown, field: string) => {
   return date;
 };
 
-const statusValue = (value: unknown): TenantStatus => {
-  if (typeof value !== "string" || !TENANT_STATUS.includes(value as TenantStatus)) {
-    throw new AppError("status is invalid", 400);
-  }
-  return value as TenantStatus;
-};
-
 class TenantController {
   async create(c: Context) {
     const businessId = c.req.param("businessId");
@@ -60,7 +52,7 @@ class TenantController {
           ? undefined
           : requiredDate(body.paidDate, "paidDate"),
       dueDate: requiredDate(body.dueDate, "dueDate"),
-      status: statusValue(body.status),
+      status: requiredString(body.status, "status"),
     });
 
     return c.json(result, 201);
@@ -93,7 +85,7 @@ class TenantController {
       data.paidDate = body.paidDate === null ? null : requiredDate(body.paidDate, "paidDate");
     }
     if (body.dueDate !== undefined) data.dueDate = requiredDate(body.dueDate, "dueDate");
-    if (body.status !== undefined) data.status = statusValue(body.status);
+    if (body.status !== undefined) data.status = requiredString(body.status, "status");
 
     return c.json(await tenantService.update(businessId, tenantId, data));
   }

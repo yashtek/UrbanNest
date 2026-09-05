@@ -2,12 +2,11 @@ import { ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
 import {
   IRoom,
-  ROOM_STATUS,
-  type RoomStatus,
   rooms,
 } from "../modals/room.modal";
 import { tenants } from "../modals/tenant.modal";
 import { distributeRoomElectricity } from "./tenant-electricity.service";
+import { commonOptionService } from "./commonOption.service";
 
 export interface CreateRoomDto {
   roomNumber: string;
@@ -30,7 +29,7 @@ export interface UpdateRoomDto {
   previousReading?: number;
   currentReading?: number;
   costPerunit?: number;
-  status?: RoomStatus;
+  status?: string;
 }
 
 const calculateElectricity = (
@@ -78,18 +77,20 @@ class RoomService {
       unitUsed,
       costPerunit: data.costPerunit,
       amount,
-      status: "NOT_FULL",
+      status: await commonOptionService.idByName("ROOM_STATUS", "NOT_FULL"),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    return rooms().insertOne(payload);
+    await rooms().insertOne(payload);
+    return (await commonOptionService.populate([payload], ["status"]))[0];
   }
 
   async getAll(businessId: string) {
-    return rooms()
+    const rows = await rooms()
       .find({ businessId: new ObjectId(businessId) })
       .toArray();
+    return commonOptionService.populate(rows, ["status"]);
   }
 
   async update(businessId: string, roomId: string, data: UpdateRoomDto) {
@@ -112,10 +113,6 @@ class RoomService {
       if (duplicateRoom) {
         throw new AppError("Room number already exists in this business", 409);
       }
-    }
-
-    if (data.status !== undefined && !ROOM_STATUS.includes(data.status)) {
-      throw new AppError("Invalid room status", 400);
     }
 
     const previousReading = data.previousReading ?? room.previousReading;
@@ -151,6 +148,7 @@ class RoomService {
         (updateFields as Record<string, unknown>)[field] = data[field];
       }
     }
+    if (data.status !== undefined) updateFields.status = await commonOptionService.require(data.status, "ROOM_STATUS");
 
     await rooms().updateOne(
       { _id: room._id, businessId: room.businessId },
@@ -159,7 +157,8 @@ class RoomService {
 
     await distributeRoomElectricity(room.businessId, room._id);
 
-    return rooms().findOne({ _id: room._id, businessId: room.businessId });
+    const updated = await rooms().findOne({ _id: room._id, businessId: room.businessId });
+    return updated ? (await commonOptionService.populate([updated], ["status"]))[0] : null;
   }
 
   async delete(businessId: string, roomId: string) {

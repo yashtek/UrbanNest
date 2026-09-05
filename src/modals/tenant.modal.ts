@@ -1,10 +1,6 @@
 import { Collection, ObjectId } from "mongodb";
 import { getDB } from "../db/db";
 
-export const TENANT_STATUS = ["PAID", "PENDING", "OVERDUE"] as const;
-
-export type TenantStatus = (typeof TENANT_STATUS)[number];
-
 export interface ITenant {
   _id: ObjectId;
   businessId: ObjectId;
@@ -21,7 +17,7 @@ export interface ITenant {
   paidDate?: Date;
   dueDate: Date;
   electricity: number;
-  status: TenantStatus;
+  status: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

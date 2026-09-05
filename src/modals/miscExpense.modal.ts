@@ -1,24 +1,10 @@
 import { Collection, ObjectId } from "mongodb";
 import { getDB } from "../db/db";
 
-export const EXPENSE_CATEGORIES = [
-  "ELECTRICITY",
-  "CLEANING",
-  "WIFI",
-  "REPAIR",
-  "FOOD",
-  "WATER",
-  "STAFF",
-  "MISC",
-  "SECURITY",
-] as const;
-
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
-
 export interface IExpense {
   _id: ObjectId;
   businessId: ObjectId;
-  category: ExpenseCategory;
+  category: ObjectId;
   amount: number;
   description: string;
   date: Date;

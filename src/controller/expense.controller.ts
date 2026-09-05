@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
-import { EXPENSE_CATEGORIES, type ExpenseCategory } from "../modals/miscExpense.modal";
 import { expenseService } from "../service/expense.service";
 
 class ExpenseController {
@@ -14,9 +13,7 @@ class ExpenseController {
 
       const body = await c.req.json();
 
-      if (typeof body?.category !== "string" || !EXPENSE_CATEGORIES.includes(body.category)) {
-        throw new AppError("category is invalid", 400);
-      }
+      if (typeof body?.category !== "string" || !body.category.trim()) throw new AppError("category id is required", 400);
 
       if (typeof body?.amount !== "number") {
         throw new AppError("amount is required", 400);
@@ -80,17 +77,10 @@ class ExpenseController {
       throw new AppError("month must use YYYY-MM format", 400);
     }
 
-    if (
-      category &&
-      !EXPENSE_CATEGORIES.includes(category as ExpenseCategory)
-    ) {
-      throw new AppError("category is invalid", 400);
-    }
-
     const result = await expenseService.getAll(businessId, {
       date,
       month,
-      category: category as ExpenseCategory | undefined,
+      category,
     });
 
     return c.json(result);

@@ -1,10 +1,6 @@
 import { Collection, ObjectId } from "mongodb";
 import { getDB } from "../db/db";
 
-export const RENT_STATUS = ["PAID", "PENDING", "OVERDUE"] as const;
-
-export type RentStatus = (typeof RENT_STATUS)[number];
-
 export interface IRent {
   _id: ObjectId;
   businessId: ObjectId;
@@ -13,7 +9,7 @@ export interface IRent {
   amount: number;
   paidDate?: Date;
   dueDate: Date;
-  status: RentStatus;
+  status: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

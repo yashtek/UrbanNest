@@ -1,21 +1,17 @@
 import { Filter, ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
-import {
-  EXPENSE_CATEGORIES,
-  expenses,
-  type ExpenseCategory,
-  type IExpense,
-} from "../modals/miscExpense.modal";
+import { expenses, type IExpense } from "../modals/miscExpense.modal";
+import { commonOptionService } from "./commonOption.service";
 
 export interface CreateExpenseDto {
-  category: ExpenseCategory;
+  category: string;
   amount: number;
   description: string;
   date: string | Date;
 }
 
 export interface UpdateExpenseDto {
-  category?: ExpenseCategory;
+  category?: string;
   amount?: number;
   description?: string;
   date?: string | Date;
@@ -24,19 +20,17 @@ export interface UpdateExpenseDto {
 export interface ExpenseFilters {
   date?: string;
   month?: string;
-  category?: ExpenseCategory;
+  category?: string;
 }
 
 class ExpenseService {
   async create(businessId: string, data: CreateExpenseDto) {
-    if (!EXPENSE_CATEGORIES.includes(data.category)) {
-      throw new AppError("Invalid expense category", 400);
-    }
+    const category = await commonOptionService.require(data.category, "EXPENSE_CATEGORY");
 
     const payload: IExpense = {
       _id: new ObjectId(),
       businessId: new ObjectId(businessId),
-      category: data.category,
+      category,
       amount: data.amount,
       description: data.description,
       date: new Date(data.date),
@@ -46,7 +40,7 @@ class ExpenseService {
 
     await expenses().insertOne(payload);
 
-    return payload;
+    return (await commonOptionService.populate([payload], ["category"]))[0];
   }
 
   async getAll(businessId: string, filters: ExpenseFilters = {}) {
@@ -55,10 +49,7 @@ class ExpenseService {
     };
 
     if (filters.category !== undefined) {
-      if (!EXPENSE_CATEGORIES.includes(filters.category)) {
-        throw new AppError("Invalid expense category", 400);
-      }
-      query.category = filters.category;
+      query.category = await commonOptionService.require(filters.category, "EXPENSE_CATEGORY");
     }
 
     if (filters.date) {
@@ -73,10 +64,11 @@ class ExpenseService {
       query.date = { $gte: start, $lt: end };
     }
 
-    return expenses()
+    const rows = await expenses()
       .find(query)
       .sort({ date: -1, createdAt: -1 })
       .toArray();
+    return commonOptionService.populate(rows, ["category"]);
   }
 
   async getById(businessId: string, expenseId: string) {
@@ -89,20 +81,16 @@ class ExpenseService {
       throw new AppError("Expense not found", 404);
     }
 
-    return expense;
+    return (await commonOptionService.populate([expense], ["category"]))[0];
   }
 
   async update(businessId: string, expenseId: string, data: UpdateExpenseDto) {
-    if (data.category !== undefined && !EXPENSE_CATEGORIES.includes(data.category)) {
-      throw new AppError("Invalid expense category", 400);
-    }
-
     const updateFields: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
     if (data.category !== undefined) {
-      updateFields.category = data.category;
+      updateFields.category = await commonOptionService.require(data.category, "EXPENSE_CATEGORY");
     }
 
     if (data.amount !== undefined) {
@@ -140,7 +128,7 @@ class ExpenseService {
       throw new AppError("Expense not found", 404);
     }
 
-    return expense;
+    return (await commonOptionService.populate([expense], ["category"]))[0];
   }
 
   async delete(businessId: string, expenseId: string) {

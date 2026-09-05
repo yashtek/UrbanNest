@@ -1,12 +1,13 @@
 import { ObjectId } from "mongodb";
-import { RentStatus, IRent, RENT_STATUS, rents } from "../modals/rent.modal";
+import { IRent, rents } from "../modals/rent.modal";
 
 import { AppError } from "../middleware/error.middleware";
+import { commonOptionService } from "./commonOption.service";
 
 export interface rentCreateDto {
   month: string;
   amount: number;
-  status: RentStatus;
+  status: string;
   paidDate?: Date | string;
   dueDate: Date | string;
 }
@@ -14,7 +15,7 @@ export interface rentCreateDto {
 export interface rentUpdate {
   month?: string;
   amount?: number;
-  status?: RentStatus;
+  status?: string;
   paidDate?: Date | string;
   dueDate?: Date | string;
 }
@@ -22,9 +23,7 @@ export interface rentUpdate {
 export class rentService {
   // create rent details
   async create(businessId: string, tenantId: string, data: rentCreateDto) {
-    if (data.status && !RENT_STATUS.includes(data.status)) {
-      throw new AppError("Invalid rent status", 400);
-    }
+    const status = await commonOptionService.require(data.status, "RENT_STATUS");
 
     const payload: IRent = {
       _id: new ObjectId(),
@@ -32,23 +31,18 @@ export class rentService {
       tenantId: new ObjectId(tenantId),
       month: data.month,
       amount: data.amount,
-      status: data.status,
+      status,
       paidDate: data.paidDate ? new Date(data.paidDate) : undefined,
       dueDate: new Date(data.dueDate),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    const result  = await rents().insertOne(payload);
-
-    return result;
+    await rents().insertOne(payload);
+    return (await commonOptionService.populate([payload], ["status"]))[0];
   }
 // update rent details
   async update(businessId: string, rentId: string, data: rentUpdate) {
-    if (data.status && !RENT_STATUS.includes(data.status)) {
-      throw new AppError("Invalid rent status", 400);
-    }
-
     const payloadToUpdate: Partial<IRent> = {};
 
     if (data.month !== undefined) {
@@ -60,7 +54,7 @@ export class rentService {
     }
 
     if (data.status !== undefined) {
-      payloadToUpdate.status = data.status;
+      payloadToUpdate.status = await commonOptionService.require(data.status, "RENT_STATUS");
     }
 
     if (data.paidDate !== undefined) {
@@ -97,22 +91,24 @@ export class rentService {
       throw new AppError("Rent data not found", 404);
     }
 
-    return rent;
+    return (await commonOptionService.populate([rent], ["status"]))[0];
   }
 // get rent detail for a specific rent record
   async getById(businessId: string, rentId: string) {
-    return rents().findOne({
+    const row = await rents().findOne({
       _id: new ObjectId(rentId),
       businessId: new ObjectId(businessId),
     });
+    return row ? (await commonOptionService.populate([row], ["status"]))[0] : null;
   }
 
   // get rent detail for a particular tenant
   async getRentforTenant(businessId: string, tenantId: string) {
-    return rents().findOne({
+    const row = await rents().findOne({
       tenantId: new ObjectId(tenantId),
       businessId: new ObjectId(businessId),
     });
+    return row ? (await commonOptionService.populate([row], ["status"]))[0] : null;
   }
 
   // delete rent details

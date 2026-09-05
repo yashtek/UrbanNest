@@ -15,12 +15,15 @@ import expenseRoutes from "./routes/expense.routes";
 import dashboardRoutes from "./routes/dashboard.routes";
 import feedbackRoutes from "./routes/feedback.routes";
 import legalRoutes from "./routes/legal.routes";
+import commonOptionRoutes from "./routes/commonOption.routes";
+import { ensureCommonOptionIndexes } from "./modals/commonOption.modal";
 const app = new Hono();
 await connectDB();
 await ensureUserIndexes();
 await ensureBusinessIndexes();
 await ensureOtpIndexes();
 await ensureRoomIndexes();
+await ensureCommonOptionIndexes();
 
 app.onError(errorHandler);
 
@@ -35,6 +38,7 @@ app.route("/business", expenseRoutes);
 app.route("/business", dashboardRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/legal", legalRoutes);
+app.route("/common", commonOptionRoutes);
 
 
 app.get("/", (c) => {

@@ -1,10 +1,11 @@
 import { ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
-import { expenses, type ExpenseCategory } from "../modals/miscExpense.modal";
+import { expenses } from "../modals/miscExpense.modal";
 import { rents } from "../modals/rent.modal";
 import { rooms } from "../modals/room.modal";
 import { staffs } from "../modals/staff.modal";
 import { tenants } from "../modals/tenant.modal";
+import { commonOptionService } from "./commonOption.service";
 
 export interface DashboardQuery {
   month?: string;
@@ -32,7 +33,7 @@ const parseMonthWindow = (input?: string) => {
 };
 
 type CategoryResult = {
-  _id: ExpenseCategory;
+  _id: ObjectId;
   total: number;
   count: number;
 };
@@ -46,6 +47,13 @@ class DashboardService {
     const businessObjectId = new ObjectId(businessId);
     const { month, monthLabel, startDate, endDate } = parseMonthWindow(query.month);
     const dateWindow = { $gte: startDate, $lt: endDate };
+    const [rentPaid, rentPending, rentOverdue, roomFull, roomNotFull, tenantPaid, tenantPending, tenantOverdue, present, absent, leave, salaryPaid, salaryUnpaid, salaryDue] = await Promise.all([
+      commonOptionService.idByName("RENT_STATUS", "PAID"), commonOptionService.idByName("RENT_STATUS", "PENDING"), commonOptionService.idByName("RENT_STATUS", "OVERDUE"),
+      commonOptionService.idByName("ROOM_STATUS", "FULL"), commonOptionService.idByName("ROOM_STATUS", "NOT_FULL"),
+      commonOptionService.idByName("TENANT_STATUS", "PAID"), commonOptionService.idByName("TENANT_STATUS", "PENDING"), commonOptionService.idByName("TENANT_STATUS", "OVERDUE"),
+      commonOptionService.idByName("STAFF_DUTY_STATUS", "PRESENT"), commonOptionService.idByName("STAFF_DUTY_STATUS", "ABSENT"), commonOptionService.idByName("STAFF_DUTY_STATUS", "LEAVE"),
+      commonOptionService.idByName("STAFF_SALARY_STATUS", "PAID"), commonOptionService.idByName("STAFF_SALARY_STATUS", "UNPAID"), commonOptionService.idByName("STAFF_SALARY_STATUS", "DUE"),
+    ]);
 
     const [rentRows, roomRows, tenantRows, staffRows, expenseRows] =
       await Promise.all([
@@ -71,11 +79,11 @@ class DashboardService {
               _id: null,
               totalExpected: { $sum: "$amount" },
               totalCollected: {
-                $sum: { $cond: [{ $eq: ["$status", "PAID"] }, "$amount", 0] },
+                $sum: { $cond: [{ $eq: ["$status", rentPaid] }, "$amount", 0] },
               },
-              paidCount: { $sum: { $cond: [{ $eq: ["$status", "PAID"] }, 1, 0] } },
-              pendingCount: { $sum: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] } },
-              overdueCount: { $sum: { $cond: [{ $eq: ["$status", "OVERDUE"] }, 1, 0] } },
+              paidCount: { $sum: { $cond: [{ $eq: ["$status", rentPaid] }, 1, 0] } },
+              pendingCount: { $sum: { $cond: [{ $eq: ["$status", rentPending] }, 1, 0] } },
+              overdueCount: { $sum: { $cond: [{ $eq: ["$status", rentOverdue] }, 1, 0] } },
             },
           },
         ]).toArray(),
@@ -94,8 +102,8 @@ class DashboardService {
             $group: {
               _id: null,
               totalRooms: { $sum: 1 },
-              fullRooms: { $sum: { $cond: [{ $eq: ["$status", "FULL"] }, 1, 0] } },
-              notFullRooms: { $sum: { $cond: [{ $eq: ["$status", "NOT_FULL"] }, 1, 0] } },
+              fullRooms: { $sum: { $cond: [{ $eq: ["$status", roomFull] }, 1, 0] } },
+              notFullRooms: { $sum: { $cond: [{ $eq: ["$status", roomNotFull] }, 1, 0] } },
               totalCapacity: { $sum: "$capacity" },
               occupiedBeds: { $sum: "$occupied" },
               electricityTotal: {
@@ -137,9 +145,9 @@ class DashboardService {
                 $sum: { $cond: [{ $and: [{ $gte: ["$joiningDate", startDate] }, { $lt: ["$joiningDate", endDate] }] }, 1, 0] },
               },
               allocatedElectricity: { $sum: "$electricity" },
-              paidCount: { $sum: { $cond: [{ $eq: ["$status", "PAID"] }, 1, 0] } },
-              pendingCount: { $sum: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] } },
-              overdueCount: { $sum: { $cond: [{ $eq: ["$status", "OVERDUE"] }, 1, 0] } },
+              paidCount: { $sum: { $cond: [{ $eq: ["$status", tenantPaid] }, 1, 0] } },
+              pendingCount: { $sum: { $cond: [{ $eq: ["$status", tenantPending] }, 1, 0] } },
+              overdueCount: { $sum: { $cond: [{ $eq: ["$status", tenantOverdue] }, 1, 0] } },
             },
           },
         ]).toArray(),
@@ -161,13 +169,13 @@ class DashboardService {
               _id: null,
               total: { $sum: 1 },
               active: { $sum: { $cond: ["$isActive", 1, 0] } },
-              present: { $sum: { $cond: [{ $eq: ["$status", "PRESENT"] }, 1, 0] } },
-              absent: { $sum: { $cond: [{ $eq: ["$status", "ABSENT"] }, 1, 0] } },
-              leave: { $sum: { $cond: [{ $eq: ["$status", "LEAVE"] }, 1, 0] } },
+              present: { $sum: { $cond: [{ $eq: ["$status", present] }, 1, 0] } },
+              absent: { $sum: { $cond: [{ $eq: ["$status", absent] }, 1, 0] } },
+              leave: { $sum: { $cond: [{ $eq: ["$status", leave] }, 1, 0] } },
               totalSalary: { $sum: "$salary" },
-              paidSalary: { $sum: { $cond: [{ $eq: ["$staffSalary", "PAID"] }, "$salary", 0] } },
-              unpaidSalary: { $sum: { $cond: [{ $eq: ["$staffSalary", "UNPAID"] }, "$salary", 0] } },
-              dueSalary: { $sum: { $cond: [{ $eq: ["$staffSalary", "DUE"] }, "$salary", 0] } },
+              paidSalary: { $sum: { $cond: [{ $eq: ["$staffSalary", salaryPaid] }, "$salary", 0] } },
+              unpaidSalary: { $sum: { $cond: [{ $eq: ["$staffSalary", salaryUnpaid] }, "$salary", 0] } },
+              dueSalary: { $sum: { $cond: [{ $eq: ["$staffSalary", salaryDue] }, "$salary", 0] } },
             },
           },
         ]).toArray(),
@@ -197,6 +205,10 @@ class DashboardService {
     const totalExpected = rent?.totalExpected ?? 0;
     const totalCollected = rent?.totalCollected ?? 0;
     const expenseTotal = expenseEnvelope?.summary[0]?.total ?? 0;
+    const populatedCategories = await commonOptionService.populate(
+      (expenseEnvelope?.byCategory ?? []).map((item) => ({ ...item, category: item._id })),
+      ["category"],
+    );
 
     return {
       period: { month, startDate: startDate.toISOString(), endDate: endDate.toISOString() },
@@ -252,8 +264,8 @@ class DashboardService {
       expenses: {
         total: expenseTotal,
         count: expenseEnvelope?.summary[0]?.count ?? 0,
-        byCategory: (expenseEnvelope?.byCategory ?? []).map((item) => ({
-          category: item._id,
+        byCategory: populatedCategories.map((item) => ({
+          category: item.category,
           total: item.total,
           count: item.count,
         })),

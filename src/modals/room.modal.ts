@@ -1,10 +1,6 @@
 import { Collection, MongoServerError, ObjectId } from "mongodb";
 import { getDB } from "../db/db";
 
-export const ROOM_STATUS = ["FULL", "NOT_FULL"] as const;
-
-export type RoomStatus = (typeof ROOM_STATUS)[number];
-
 export interface IRoom {
   _id: ObjectId;
   businessId: ObjectId;
@@ -19,7 +15,7 @@ export interface IRoom {
   unitUsed: number;
   costPerunit: number;
   amount: number;
-  status: RoomStatus;
+  status: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

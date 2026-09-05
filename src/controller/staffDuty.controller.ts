@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
-import { STAFF_DUTY_STATUS, STAFF_SHIFTS } from "../modals/staffDuty.modal";
 import { staffDutyService } from "../service/staffDuty.service";
 
 class StaffDutyController {
@@ -18,17 +17,13 @@ class StaffDutyController {
         throw new AppError("staffId is required", 400);
       }
 
-      if (typeof body?.shift !== "string" || !STAFF_SHIFTS.includes(body.shift)) {
-        throw new AppError("shift is invalid", 400);
-      }
+      if (typeof body?.shift !== "string" || !body.shift.trim()) throw new AppError("shift id is required", 400);
 
       if (typeof body?.date !== "string" && !(body.date instanceof Date)) {
         throw new AppError("date is required", 400);
       }
 
-      if (typeof body?.status !== "string" || !STAFF_DUTY_STATUS.includes(body.status)) {
-        throw new AppError("status is invalid", 400);
-      }
+      if (typeof body?.status !== "string" || !body.status.trim()) throw new AppError("status id is required", 400);
 
       const result = await staffDutyService.create(businessId, {
         staffId: body.staffId,

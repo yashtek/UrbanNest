@@ -3,36 +3,29 @@ import { AppError } from "../middleware/error.middleware";
 import {
   staffDuties,
   type IStaffDuty,
-  STAFF_DUTY_STATUS,
-  STAFF_SHIFTS,
-  type StaffDutyStatus,
-  type StaffShift,
 } from "../modals/staffDuty.modal";
 import { staffs } from "../modals/staff.modal";
+import { commonOptionService } from "./commonOption.service";
 
 export interface CreateStaffDutyDto {
   staffId: string;
-  shift: StaffShift;
+  shift: string;
   date: string | Date;
-  status: StaffDutyStatus;
+  status: string;
 }
 
 export interface UpdateStaffDutyDto {
   staffId?: string;
-  shift?: StaffShift;
+  shift?: string;
   date?: string | Date;
-  status?: StaffDutyStatus;
+  status?: string;
 }
 
 class StaffDutyService {
   async create(businessId: string, data: CreateStaffDutyDto) {
-    if (!STAFF_SHIFTS.includes(data.shift)) {
-      throw new AppError("Invalid staff shift", 400);
-    }
-
-    if (!STAFF_DUTY_STATUS.includes(data.status)) {
-      throw new AppError("Invalid staff duty status", 400);
-    }
+    const [shift, status] = await Promise.all([
+      commonOptionService.require(data.shift, "STAFF_SHIFT"), commonOptionService.require(data.status, "STAFF_DUTY_STATUS"),
+    ]);
 
     const businessObjectId = new ObjectId(businessId);
     const staffObjectId = new ObjectId(data.staffId);
@@ -50,22 +43,23 @@ class StaffDutyService {
       _id: new ObjectId(),
       businessId: businessObjectId,
       staffId: staffObjectId,
-      shift: data.shift,
+      shift,
       date: new Date(data.date),
-      status: data.status,
+      status,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     await staffDuties().insertOne(payload);
 
-    return payload;
+    return (await commonOptionService.populate([payload], ["shift", "status"]))[0];
   }
 
   async getAll(businessId: string) {
-    return staffDuties()
+    const rows = await staffDuties()
       .find({ businessId: new ObjectId(businessId) })
       .toArray();
+    return commonOptionService.populate(rows, ["shift", "status"]);
   }
 
   async getById(businessId: string, staffDutyId: string) {
@@ -78,18 +72,10 @@ class StaffDutyService {
       throw new AppError("Staff duty not found", 404);
     }
 
-    return staffDuty;
+    return (await commonOptionService.populate([staffDuty], ["shift", "status"]))[0];
   }
 
   async update(businessId: string, staffDutyId: string, data: UpdateStaffDutyDto) {
-    if (data.shift !== undefined && !STAFF_SHIFTS.includes(data.shift)) {
-      throw new AppError("Invalid staff shift", 400);
-    }
-
-    if (data.status !== undefined && !STAFF_DUTY_STATUS.includes(data.status)) {
-      throw new AppError("Invalid staff duty status", 400);
-    }
-
     const updateFields: Record<string, unknown> = {
       updatedAt: new Date(),
     };
@@ -109,7 +95,7 @@ class StaffDutyService {
     }
 
     if (data.shift !== undefined) {
-      updateFields.shift = data.shift;
+      updateFields.shift = await commonOptionService.require(data.shift, "STAFF_SHIFT");
     }
 
     if (data.date !== undefined) {
@@ -117,7 +103,7 @@ class StaffDutyService {
     }
 
     if (data.status !== undefined) {
-      updateFields.status = data.status;
+      updateFields.status = await commonOptionService.require(data.status, "STAFF_DUTY_STATUS");
     }
 
     const result = await staffDuties().updateOne(
@@ -143,7 +129,7 @@ class StaffDutyService {
       throw new AppError("Staff duty not found", 404);
     }
 
-    return staffDuty;
+    return (await commonOptionService.populate([staffDuty], ["shift", "status"]))[0];
   }
 
   async delete(businessId: string, staffDutyId: string) {

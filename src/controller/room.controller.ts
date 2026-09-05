@@ -1,6 +1,5 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
-import { type RoomStatus } from "../modals/room.modal";
 import { roomService, type UpdateRoomDto } from "../service/room.service";
 
 const toString = (value: unknown, field: string) => {
@@ -85,7 +84,7 @@ class RoomController {
       previousReading: optionalNumber(body.previousReading, "previousReading"),
       currentReading: optionalNumber(body.currentReading, "currentReading"),
       costPerunit: optionalNumber(body.costPerunit, "costPerunit"),
-      status: body.status as RoomStatus | undefined,
+      status: body.status === undefined ? undefined : toString(body.status, "status"),
     };
 
     return c.json(await roomService.update(businessId, roomId, data));

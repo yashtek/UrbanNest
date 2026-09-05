@@ -1,14 +1,13 @@
 import { ObjectId } from "mongodb";
 import {
   ITenant,
-  TENANT_STATUS,
   tenants,
-  TenantStatus,
 } from "../modals/tenant.modal";
 import { AppError } from "../middleware/error.middleware";
-import { ROOM_STATUS, rooms } from "../modals/room.modal";
+import { rooms } from "../modals/room.modal";
 import { rents } from "../modals/rent.modal";
 import { distributeRoomElectricity } from "./tenant-electricity.service";
+import { commonOptionService } from "./commonOption.service";
 
 export interface createTenant {
   roomId: string;
@@ -23,7 +22,7 @@ export interface createTenant {
   amount: number;
   paidDate?: string | Date;
   dueDate: string | Date;
-  status: TenantStatus;
+  status: string;
 }
 
 export interface updateTenant {
@@ -39,7 +38,7 @@ export interface updateTenant {
   amount?: number;
   paidDate?: string | Date | null;
   dueDate?: string | Date;
-  status?: TenantStatus;
+  status?: string;
 }
 
 // Tenant service for CRUD operations scoped to a business and room.
@@ -76,7 +75,7 @@ export class tenantservice {
       paidDate: data.paidDate ? new Date(data.paidDate) : undefined,
       dueDate: new Date(data.dueDate),
       electricity: 0,
-      status: data.status,
+      status: await commonOptionService.require(data.status, "TENANT_STATUS"),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -92,25 +91,22 @@ export class tenantservice {
       {
         $set: {
           occupied: newOccupied,
-          status: newOccupied >= room.capacity ? "FULL" : "NOT_FULL",
+          status: await commonOptionService.idByName("ROOM_STATUS", newOccupied >= room.capacity ? "FULL" : "NOT_FULL"),
           updatedAt: new Date(),
         },
       },
     );
 
     await distributeRoomElectricity(budinessObjectId, roomObjectId);
-    return tenants().findOne({
+    const created = await tenants().findOne({
       _id: payload._id,
       businessId: budinessObjectId,
     });
+    return created ? (await commonOptionService.populate([created], ["status"]))[0] : null;
   }
 
   // Update a tenant record within a business.
   async update(businessId: string, tenantId: string, data: updateTenant) {
-    if (data.status && !TENANT_STATUS.includes(data.status)) {
-      throw new AppError("Invalid tenant status", 400);
-    }
-
     const payloadToUpdate: Partial<ITenant> = {};
 
     if (data.roomId) {
@@ -162,7 +158,7 @@ export class tenantservice {
     }
 
     if (data.status !== undefined) {
-      payloadToUpdate.status = data.status;
+      payloadToUpdate.status = await commonOptionService.require(data.status, "TENANT_STATUS");
     }
 
     const result = await tenants().updateOne(
@@ -200,17 +196,18 @@ export class tenantservice {
       throw new AppError("Tenant not found", 404);
     }
 
-    return tenant;
+    return (await commonOptionService.populate([tenant], ["status"]))[0];
   }
 
   // List tenants for a specific business room.
   async getAll(businessId: string, roomId: string) {
-    return tenants()
+    const rows = await tenants()
       .find({
         businessId: new ObjectId(businessId),
         roomId: new ObjectId(roomId),
       })
       .toArray();
+    return commonOptionService.populate(rows, ["status"]);
   }
 
   // Fetch a tenant by tenant id inside a business.
@@ -224,7 +221,7 @@ export class tenantservice {
       throw new AppError("Tenant not found", 404);
     }
 
-    return tenant;
+    return (await commonOptionService.populate([tenant], ["status"]))[0];
   }
   // Delete a tenant record from a business.
  async delete(businessId: string, tenantId: string) {
@@ -269,7 +266,7 @@ export class tenantservice {
       {
         $set: {
           occupied: newOccupied,
-          status: newOccupied >= room.capacity ? "FULL" : "NOT_FULL",
+          status: await commonOptionService.idByName("ROOM_STATUS", newOccupied >= room.capacity ? "FULL" : "NOT_FULL"),
           updatedAt: new Date(),
         },
       }
