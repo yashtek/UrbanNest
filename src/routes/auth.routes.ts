@@ -10,6 +10,7 @@ authRoutes.post("/logout", ...auth.logout);
 authRoutes.get("/me", ...auth.me);
 authRoutes.get("/profile", ...auth.profile);
 authRoutes.patch("/profile", ...auth.updateProfile);
+authRoutes.delete("/profile", ...auth.deleteProfile);
 authRoutes.get("/verify-token", ...auth.verifyToken);
 authRoutes.get("/check-username", auth.checkUsername);
 authRoutes.post("/forgot-password/send-otp", auth.sendForgotPasswordOtp);

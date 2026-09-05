@@ -4,12 +4,13 @@ import { getDB } from "../db/db";
 export const EXPENSE_CATEGORIES = [
   "ELECTRICITY",
   "CLEANING",
-  "INTERNET",
+  "WIFI",
   "REPAIR",
   "FOOD",
   "WATER",
   "STAFF",
-  "OTHER",
+  "MISC",
+  "SECURITY",
 ] as const;
 
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];

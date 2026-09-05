@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
 import {
   EXPENSE_CATEGORIES,
@@ -19,6 +19,12 @@ export interface UpdateExpenseDto {
   amount?: number;
   description?: string;
   date?: string | Date;
+}
+
+export interface ExpenseFilters {
+  date?: string;
+  month?: string;
+  category?: ExpenseCategory;
 }
 
 class ExpenseService {
@@ -43,9 +49,33 @@ class ExpenseService {
     return payload;
   }
 
-  async getAll(businessId: string) {
+  async getAll(businessId: string, filters: ExpenseFilters = {}) {
+    const query: Filter<IExpense> = {
+      businessId: new ObjectId(businessId),
+    };
+
+    if (filters.category !== undefined) {
+      if (!EXPENSE_CATEGORIES.includes(filters.category)) {
+        throw new AppError("Invalid expense category", 400);
+      }
+      query.category = filters.category;
+    }
+
+    if (filters.date) {
+      const start = new Date(`${filters.date}T00:00:00.000Z`);
+      const end = new Date(start);
+      end.setUTCDate(end.getUTCDate() + 1);
+      query.date = { $gte: start, $lt: end };
+    } else if (filters.month) {
+      const [year, month] = filters.month.split("-").map(Number);
+      const start = new Date(Date.UTC(year, month - 1, 1));
+      const end = new Date(Date.UTC(year, month, 1));
+      query.date = { $gte: start, $lt: end };
+    }
+
     return expenses()
-      .find({ businessId: new ObjectId(businessId) })
+      .find(query)
+      .sort({ date: -1, createdAt: -1 })
       .toArray();
   }
 

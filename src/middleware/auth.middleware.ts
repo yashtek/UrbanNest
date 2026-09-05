@@ -16,7 +16,7 @@ export const authMiddleware = createMiddleware<{ Variables: Variables }>(
       const payload = verifyAccessToken(header.slice(7));
       if (!ObjectId.isValid(payload.userId)) throw new Error("bad id");
       const user = await users().findOne(
-        { _id: new ObjectId(payload.userId) },
+        { _id: new ObjectId(payload.userId), isDeleted: { $ne: true } },
         { projection: { tokenVersion: 1 } },
       );
       if (!user || user.tokenVersion !== payload.tokenVersion)

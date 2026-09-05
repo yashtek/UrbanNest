@@ -81,6 +81,15 @@ export const updateProfile = [
     );
   },
 ] as const;
+
+// Soft-delete the authenticated user's account and revoke current tokens.
+export const deleteProfile = [
+  authMiddleware,
+  async (c: Context) => {
+    await auth.softDeleteUser(c.get("user").userId);
+    return ok(c, "Account deleted successfully");
+  },
+] as const;
 // Validate the current access token and return its expiry.
 export const verifyToken = [
   authMiddleware,

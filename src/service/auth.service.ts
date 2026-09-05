@@ -69,6 +69,7 @@ export const completeSignup = async (input: {
     fullName: input.fullName,
     email: input.email,
     tokenVersion: 0,
+    isDeleted: false,
     createdAt: time,
     updatedAt: time,
   };
@@ -102,6 +103,7 @@ export const login = async ({
 }) => {
   const user = await users().findOne({
     usernameNormalized: normalized(username),
+    isDeleted: { $ne: true },
   });
   if (!user || !(await bcrypt.compare(password, user.passwordHash)))
     throw new AppError("Invalid username or password", 401);
@@ -139,7 +141,10 @@ export const usernameAvailable = async (username: string) =>
   ));
 // Fetch the public profile for the authenticated user.
 export const getUser = async (userId: string) => {
-  const user = await users().findOne({ _id: new ObjectId(userId) });
+  const user = await users().findOne({
+    _id: new ObjectId(userId),
+    isDeleted: { $ne: true },
+  });
   if (!user) throw new AppError("User not found", 404);
   return publicUser(user);
 };
@@ -150,16 +155,20 @@ export const getProfile = getUser;
 // Update the authenticated user's profile.
 export const updateProfile = async (userId: string, input: UpdateProfileInput) => {
   const userObjectId = new ObjectId(userId);
-  const existingUser = await users().findOne({ _id: userObjectId });
+  const existingUser = await users().findOne({
+    _id: userObjectId,
+    isDeleted: { $ne: true },
+  });
 
   if (!existingUser) {
     throw new AppError("User not found", 404);
   }
 
-  const updateFields: Record<string, unknown> = {
+  const updateFields: Partial<IUser> = {
     updatedAt: new Date(),
     tokenVersion: existingUser.tokenVersion + 1,
   };
+  let unsetEmail = false;
 
   if (input.fullName !== undefined) {
     updateFields.fullName = input.fullName;
@@ -172,7 +181,7 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
 
   if (input.email !== undefined) {
     if (input.email === null) {
-      updateFields.$unset = { email: "" };
+      unsetEmail = true;
     } else {
       updateFields.email = input.email;
     }
@@ -182,10 +191,8 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
     const result = await users().updateOne(
       { _id: userObjectId },
       {
-        $set: Object.fromEntries(
-          Object.entries(updateFields).filter(([key]) => key !== "$unset"),
-        ),
-        ...(updateFields.$unset ? { $unset: updateFields.$unset } : {}),
+        $set: updateFields,
+        ...(unsetEmail ? { $unset: { email: "" as const } } : {}),
       },
     );
 
@@ -212,4 +219,20 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
   }
 
   return authResult(updatedUser);
+};
+
+// Soft-delete the authenticated account and immediately revoke its tokens.
+export const softDeleteUser = async (userId: string) => {
+  if (!ObjectId.isValid(userId)) throw new AppError("Invalid user token", 401);
+
+  const deletedAt = new Date();
+  const result = await users().updateOne(
+    { _id: new ObjectId(userId), isDeleted: { $ne: true } },
+    {
+      $set: { isDeleted: true, deletedAt, updatedAt: deletedAt },
+      $inc: { tokenVersion: 1 },
+    },
+  );
+
+  if (!result.matchedCount) throw new AppError("User not found", 404);
 };

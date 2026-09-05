@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
-import { EXPENSE_CATEGORIES } from "../modals/miscExpense.modal";
+import { EXPENSE_CATEGORIES, type ExpenseCategory } from "../modals/miscExpense.modal";
 import { expenseService } from "../service/expense.service";
 
 class ExpenseController {
@@ -54,7 +54,44 @@ class ExpenseController {
       throw new AppError("businessId is required", 400);
     }
 
-    const result = await expenseService.getAll(businessId);
+    const date = c.req.query("date");
+    const month = c.req.query("month");
+    const category = c.req.query("category");
+
+    if (date && month) {
+      throw new AppError("Use either date or month, not both", 400);
+    }
+
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new AppError("date must use YYYY-MM-DD format", 400);
+    }
+
+    if (date) {
+      const parsedDate = new Date(`${date}T00:00:00.000Z`);
+      if (
+        Number.isNaN(parsedDate.getTime()) ||
+        parsedDate.toISOString().slice(0, 10) !== date
+      ) {
+        throw new AppError("date is invalid", 400);
+      }
+    }
+
+    if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+      throw new AppError("month must use YYYY-MM format", 400);
+    }
+
+    if (
+      category &&
+      !EXPENSE_CATEGORIES.includes(category as ExpenseCategory)
+    ) {
+      throw new AppError("category is invalid", 400);
+    }
+
+    const result = await expenseService.getAll(businessId, {
+      date,
+      month,
+      category: category as ExpenseCategory | undefined,
+    });
 
     return c.json(result);
   }

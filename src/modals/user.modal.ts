@@ -11,6 +11,8 @@ export interface IUser {
   fullName: string;
   email?: string;
   tokenVersion: number;
+  isDeleted?: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
