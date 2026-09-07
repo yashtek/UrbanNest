@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { AppError } from "../middleware/error.middleware";
 import { businessService } from "../service/business.service";
+import { parsePagination } from "../utils/pagination";
 
 // Business controller for business CRUD endpoints.
 export class BusinessController {
@@ -37,7 +38,10 @@ export class BusinessController {
     // List all businesses owned by the authenticated user.
     async getAll(c: Context) {
         const user = c.get("user") as { userId: string };
-        const result = await businessService.getAll(user.userId);
+        const result = await businessService.getAll(
+            user.userId,
+            parsePagination(c.req.query("page"), c.req.query("limit")),
+        );
 
         return c.json(result);
     }

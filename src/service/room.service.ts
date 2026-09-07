@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { getPagination, type PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/error.middleware";
 import {
   IRoom,
@@ -86,11 +87,19 @@ class RoomService {
     return (await commonOptionService.populate([payload], ["status"]))[0];
   }
 
-  async getAll(businessId: string) {
-    const rows = await rooms()
-      .find({ businessId: new ObjectId(businessId) })
-      .toArray();
-    return commonOptionService.populate(rows, ["status"]);
+  async getAll(businessId: string, options: PaginationOptions = {}) {
+    const { page, limit, skip } = getPagination(options);
+    if (!ObjectId.isValid(businessId)) throw new AppError("Invalid businessId", 400);
+    const filter = { businessId: new ObjectId(businessId) };
+    const collection = rooms();
+    const [rows, total] = await Promise.all([
+      collection.find(filter).sort({ _id: -1 }).skip(skip).limit(limit).toArray(),
+      collection.countDocuments(filter),
+    ]);
+    return {
+      data: await commonOptionService.populate(rows, ["status"]),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async update(businessId: string, roomId: string, data: UpdateRoomDto) {

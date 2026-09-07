@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { ObjectId, type Filter } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
 import {
   staffs,
@@ -63,11 +63,30 @@ class StaffService {
     return (await commonOptionService.populate([payload], ["role", "shift", "status", "staffSalary"]))[0];
   }
 
-  async getAll(businessId: string) {
-    const rows = await staffs()
-      .find({ businessId: new ObjectId(businessId) })
-      .toArray();
-    return commonOptionService.populate(rows, ["role", "shift", "status", "staffSalary"]);
+  async getAll(businessId: string, options: { page?: number; limit?: number; staff_role?: string } = {}) {
+    const { page = 1, limit = 10, staff_role } = options;
+    if (!ObjectId.isValid(businessId)) throw new AppError("Invalid businessId", 400);
+    if (!Number.isSafeInteger(page) || page < 1) throw new AppError("page must be a positive integer", 400);
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+      throw new AppError("limit must be an integer between 1 and 100", 400);
+    }
+    const skip = (page - 1) * limit;
+    if (!Number.isSafeInteger(skip)) throw new AppError("page is too large", 400);
+
+    const filter: Filter<IStaff> = { businessId: new ObjectId(businessId) };
+    if (staff_role) {
+      if (!ObjectId.isValid(staff_role)) throw new AppError("Invalid staff_role id", 400);
+      filter.role = new ObjectId(staff_role);
+    }
+    const collection = staffs();
+    const [rows, total] = await Promise.all([
+      collection.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit).toArray(),
+      collection.countDocuments(filter),
+    ]);
+    return {
+      data: await commonOptionService.populate(rows, ["role", "shift", "status", "staffSalary"]),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async getById(businessId: string, staffId: string) {

@@ -1,4 +1,5 @@
 import { Context } from "hono";
+import { parsePagination } from "../utils/pagination";
 import { AppError } from "../middleware/error.middleware";
 import { roomService, type UpdateRoomDto } from "../service/room.service";
 
@@ -60,7 +61,7 @@ class RoomController {
   async getAll(c: Context) {
     const businessId = c.req.param("businessId");
     if (!businessId) throw new AppError("businessId is required", 400);
-    return c.json(await roomService.getAll(businessId));
+    return c.json(await roomService.getAll(businessId, parsePagination(c.req.query("page"), c.req.query("limit"))));
   }
 
   async update(c: Context) {

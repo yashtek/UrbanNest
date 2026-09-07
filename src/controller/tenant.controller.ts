@@ -1,4 +1,5 @@
 import { Context } from "hono";
+import { parsePagination } from "../utils/pagination";
 import { AppError } from "../middleware/error.middleware";
 import { tenantService, type updateTenant } from "../service/tenant.service";
 
@@ -96,7 +97,7 @@ class TenantController {
     if (!businessId || !roomId) {
       throw new AppError("businessId and roomId are required", 400);
     }
-    return c.json(await tenantService.getAll(businessId, roomId));
+    return c.json(await tenantService.getAll(businessId, roomId, parsePagination(c.req.query("page"), c.req.query("limit"))));
   }
 
   async getById(c: Context) {

@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { getPagination, type PaginationOptions } from "../utils/pagination";
 import {
   ITenant,
   tenants,
@@ -200,14 +201,20 @@ export class tenantservice {
   }
 
   // List tenants for a specific business room.
-  async getAll(businessId: string, roomId: string) {
-    const rows = await tenants()
-      .find({
-        businessId: new ObjectId(businessId),
-        roomId: new ObjectId(roomId),
-      })
-      .toArray();
-    return commonOptionService.populate(rows, ["status"]);
+  async getAll(businessId: string, roomId: string, options: PaginationOptions = {}) {
+    const { page, limit, skip } = getPagination(options);
+    if (!ObjectId.isValid(businessId)) throw new AppError("Invalid businessId", 400);
+    if (!ObjectId.isValid(roomId)) throw new AppError("Invalid roomId", 400);
+    const filter = { businessId: new ObjectId(businessId), roomId: new ObjectId(roomId) };
+    const collection = tenants();
+    const [rows, total] = await Promise.all([
+      collection.find(filter).sort({ _id: -1 }).skip(skip).limit(limit).toArray(),
+      collection.countDocuments(filter),
+    ]);
+    return {
+      data: await commonOptionService.populate(rows, ["status"]),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // Fetch a tenant by tenant id inside a business.

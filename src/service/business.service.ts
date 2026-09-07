@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { getPagination, type PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/error.middleware";
 import {
   BUSINESS_TEMPLATES,
@@ -48,8 +49,18 @@ export class BusinessService {
   }
 
   // get all business
-  async getAll(owner_id: string) {
-    return await businesses().find({ owner_id }).toArray();
+  async getAll(owner_id: string, options: PaginationOptions = {}) {
+    const { page, limit, skip } = getPagination(options);
+    const filter = { owner_id };
+    const collection = businesses();
+    const [data, total] = await Promise.all([
+      collection.find(filter).sort({ _id: -1 }).skip(skip).limit(limit).toArray(),
+      collection.countDocuments(filter),
+    ]);
+    return {
+      data,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // update business name and template

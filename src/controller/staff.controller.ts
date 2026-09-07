@@ -55,7 +55,21 @@ class StaffController {
   async getAll(c: Context) {
     const businessId = c.req.param("businessId");
     if (!businessId) throw new AppError("businessId is required", 400);
-    return c.json(await staffService.getAll(businessId));
+    const parsePositiveInteger = (name: string, fallback: number) => {
+      const raw = c.req.query(name);
+      if (raw === undefined) return fallback;
+      const value = Number(raw);
+      if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value < 1) {
+        throw new AppError(`${name} must be a positive integer`, 400);
+      }
+      return value;
+    };
+
+    return c.json(await staffService.getAll(businessId, {
+      page: parsePositiveInteger("page", 1),
+      limit: parsePositiveInteger("limit", 10),
+      staff_role: c.req.query("staff_role")?.trim() || undefined,
+    }));
   }
 
   async getById(c: Context) {
