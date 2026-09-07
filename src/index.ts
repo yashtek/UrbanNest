@@ -1,3 +1,4 @@
+import { ensureEmailOtpIndexes } from "./otp/email-otp.service";
 import { Hono } from "hono";
 import { connectDB } from "./db/db";
 import { errorHandler } from "./middleware/error.middleware";
@@ -22,6 +23,7 @@ await connectDB();
 await ensureUserIndexes();
 await ensureBusinessIndexes();
 await ensureOtpIndexes();
+await ensureEmailOtpIndexes();
 await ensureRoomIndexes();
 await ensureCommonOptionIndexes();
 

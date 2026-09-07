@@ -1,14 +1,18 @@
+import { verifyFirebasePhone } from "../firebase/phone-verification.service";
 import { Context } from "hono";
 import { authMiddleware } from "../middleware/auth.middleware";
 import * as auth from "../service/auth.service";
 import {
   completeSignupSchema,
+  firebasePhoneSchema,
   loginSchema,
   phoneSchema,
   resetPasswordSchema,
   updateProfileSchema,
   usernameQuerySchema,
   verifyOtpSchema,
+  verifySignupOtpSchema,
+  sendSignupOtpSchema,
 } from "../validators/auth.validators";
 
 const body = async <T>(c: Context, schema: { parse(value: unknown): T }) =>
@@ -26,15 +30,19 @@ const ok = (
 
 // Auth controller handlers for signup, login, token, and password flows.
 export const sendSignupOtp = async (c: Context) => {
-  const { phoneNumber } = await body(c, phoneSchema);
-  await auth.sendSignupOtp(phoneNumber);
-  return ok(c, "OTP sent if delivery is available");
+  const { email } = await body(c, sendSignupOtpSchema);
+  return ok(c, "OTP email accepted for delivery", await auth.sendSignupOtp(email));
 };
 // Verify the OTP sent during signup.
 export const verifySignupOtp = async (c: Context) => {
-  const { phoneNumber, otp } = await body(c, verifyOtpSchema);
-  await auth.verifySignupOtp(phoneNumber, otp);
-  return ok(c, "Phone number verified");
+  const { email, otp } = await body(c, verifySignupOtpSchema);
+  return ok(c, "Email verified", await auth.verifySignupOtp(email, otp));
+};
+// Optional early check for the signup form. Complete-signup checks the token again.
+export const verifyPhoneNumber = async (c: Context) => {
+  const input = await body(c, firebasePhoneSchema);
+  c.header("Cache-Control", "no-store");
+  return ok(c, "Phone number verified", await verifyFirebasePhone(input.phoneNumber, input.fpnvToken));
 };
 // Complete user registration after phone verification.
 export const completeSignup = async (c: Context) =>

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import * as auth from "../controller/auth.controller";
 
 const authRoutes = new Hono();
+authRoutes.post("/verify-phone-number", auth.verifyPhoneNumber);
 authRoutes.post("/send-signup-otp", auth.sendSignupOtp);
 authRoutes.post("/verify-signup-otp", auth.verifySignupOtp);
 authRoutes.post("/complete-signup", auth.completeSignup);

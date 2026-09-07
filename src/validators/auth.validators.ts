@@ -18,20 +18,20 @@ const password = z
 const otp = z.string().regex(/^\d{6}$/, "OTP must be a 6-digit code");
 
 export const phoneSchema = z.object({ phoneNumber: phone });
+const signupEmail = z.string().trim().toLowerCase().email().max(254);
+export const sendSignupOtpSchema = z.object({ email: signupEmail });
+export const verifySignupOtpSchema = z.object({ email: signupEmail, otp }).strict();
 export const verifyOtpSchema = z.object({ phoneNumber: phone, otp });
+export const firebasePhoneSchema = phoneSchema.extend({ fpnvToken: z.string().trim().min(1).max(8192) });
 export const completeSignupSchema = z.object({
+  verificationToken: z.string().regex(/^[a-f0-9]{64}$/),
   phoneNumber: phone,
   fullName: z
     .string()
     .trim()
     .min(2, "Full name must be at least 2 characters")
     .max(100),
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Invalid email address")
-    .optional(),
+  email: signupEmail,
   username: z
     .string()
     .trim()

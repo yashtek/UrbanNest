@@ -22,9 +22,9 @@ export const createAccessToken = (user: Pick<AccessTokenPayload, "username" | "t
   jwt.sign(
     { userId: user._id.toString(), username: user.username, tokenVersion: user.tokenVersion, jti: crypto.randomUUID() },
     accessSecret(),
-    { expiresIn: "7d", issuer: "urbannest", audience: "urbannest-mobile" },
+    { expiresIn: "7d", issuer: "Umanage", audience: "Umanage-mobile" },
   );
 
 export const verifyAccessToken = (token: string): AccessTokenPayload => jwt.verify(token, accessSecret(), {
-  issuer: "urbannest", audience: "urbannest-mobile",
+  issuer: "Umanage", audience: "Umanage-mobile",
 }) as AccessTokenPayload;

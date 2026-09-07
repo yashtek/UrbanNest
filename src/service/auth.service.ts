@@ -1,3 +1,4 @@
+import { sendSignupEmailOtp, verifySignupEmailOtp, consumeSignupEmailProof } from "../otp/email-otp.service";
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 import { users, type IUser } from "../modals/user.modal";
@@ -13,6 +14,7 @@ const publicUser = (user: IUser) => ({
   username: user.username,
   fullName: user.fullName,
   email: user.email,
+  emailVerified: user.emailVerified ?? false,
   createdAt: user.createdAt,
 });
 const authResult = (user: IUser) => ({
@@ -28,11 +30,9 @@ export type UpdateProfileInput = {
 };
 
 // Auth service functions for OTP, signup, login, logout, and password reset.
-export const sendSignupOtp = (phoneNumber: string) =>
-  otpService.send(phoneNumber, OtpPurpose.SIGNUP);
 // Verify the signup OTP for a phone number.
-export const verifySignupOtp = (phoneNumber: string, code: string) =>
-  otpService.verify(phoneNumber, OtpPurpose.SIGNUP, code);
+export const sendSignupOtp = sendSignupEmailOtp;
+export const verifySignupOtp = verifySignupEmailOtp;
 // Send a password reset OTP only when the account exists.
 export const sendPasswordResetOtp = async (phoneNumber: string) => {
   // Deliberately generic to avoid exposing whether a phone number has an account.
@@ -52,17 +52,19 @@ export const verifyPasswordResetOtp = async (
 // Create a new user after phone verification.
 export const completeSignup = async (input: {
   phoneNumber: string;
+  verificationToken: string;
   fullName: string;
-  email?: string;
+  email: string;
   username: string;
   password: string;
 }) => {
-  await otpService.requireVerified(input.phoneNumber, OtpPurpose.SIGNUP);
+  await consumeSignupEmailProof(input.email, input.verificationToken);
   const time = new Date();
   const user: IUser = {
     _id: new ObjectId(),
     phoneNumber: input.phoneNumber,
-    phoneVerified: true,
+    phoneVerified: false,
+    emailVerified: true,
     username: input.username,
     usernameNormalized: normalized(input.username),
     passwordHash: await bcrypt.hash(input.password, HASH_ROUNDS),
@@ -89,7 +91,6 @@ export const completeSignup = async (input: {
     }
     throw error;
   }
-  await otpService.consumeVerified(input.phoneNumber, OtpPurpose.SIGNUP);
   return authResult(user);
 };
 
@@ -182,8 +183,10 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
   if (input.email !== undefined) {
     if (input.email === null) {
       unsetEmail = true;
+      updateFields.emailVerified = false;
     } else {
       updateFields.email = input.email;
+      if (input.email !== existingUser.email) updateFields.emailVerified = false;
     }
   }
 

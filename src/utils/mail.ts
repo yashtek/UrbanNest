@@ -13,5 +13,5 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
     host, port: Number(Bun.env.SMTP_PORT ?? 587), secure: Bun.env.SMTP_SECURE === "true",
     auth: Bun.env.SMTP_USER ? { user: Bun.env.SMTP_USER, pass: Bun.env.SMTP_PASSWORD } : undefined,
   });
-  await transporter.sendMail({ from, to: email, subject: "Reset your UrbanNest password", text: `Use this link to reset your password. It expires in 24 hours: ${url.toString()}` });
+  await transporter.sendMail({ from, to: email, subject: "Reset your UManage password", text: `Use this link to reset your password. It expires in 24 hours: ${url.toString()}` });
 }

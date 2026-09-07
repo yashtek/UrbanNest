@@ -10,6 +10,7 @@ export interface IUser {
   passwordHash: string;
   fullName: string;
   email?: string;
+  emailVerified?: boolean;
   tokenVersion: number;
   isDeleted?: boolean;
   deletedAt?: Date;

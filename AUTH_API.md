@@ -1,4 +1,6 @@
-# UrbanNest mobile authentication API
+> Signup now uses email OTP through Resend. See [EMAIL_OTP_SIGNUP.md](EMAIL_OTP_SIGNUP.md) for the current contract.
+
+# Umanage mobile authentication API
 
 Set `MONGODB_URI` and a random `JWT_ACCESS_SECRET` of at least 32 characters. JWTs expire after seven days.
 

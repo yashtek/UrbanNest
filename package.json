@@ -1,5 +1,5 @@
 {
-  "name": "UrbanNest",
+  "name": "Umanage",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "start": "bun run src/index.ts",
@@ -7,13 +7,16 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.8.0",
+    "@msg91comm/sendotp-react-native": "^3.0.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
+    "firebase-admin": "^14.3.0",
     "hono": "^4.12.28",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "6",
     "nodemailer": "^9.0.3",
+    "resend": "^6.26.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
