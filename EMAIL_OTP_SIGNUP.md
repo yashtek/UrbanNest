@@ -1,8 +1,9 @@
 # Signup email OTP (current flow)
 
 Set RESEND_KEY in .env. Optional RESEND_FROM defaults to
-Umanage <onboarding@resend.dev>. Resend's default sender permits testing only to
-your Resend account email; for other recipients use your verified domain sender.
+Umanage <noreply@yashtek.in>. Verify yashtek.in in Resend before sending.
+On Render, set RESEND_FROM="Umanage <noreply@yashtek.in>" and redeploy;
+an existing RESEND_FROM value overrides the default sender.
 No API keys or recipient addresses are hardcoded. No actual email was sent in tests.
 
 1. POST /auth/send-signup-otp

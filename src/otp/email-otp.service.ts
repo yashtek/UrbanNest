@@ -37,7 +37,7 @@ export async function sendSignupEmailOtp(email: string) {
   try {
     const resend = new Resend(key);
     const {data,error} = await resend.emails.send({
-      from: process.env.RESEND_FROM?.trim() || "Umanage <onboarding@resend.dev>",
+      from: process.env.RESEND_FROM?.trim() || "Umanage <noreply@yashtek.in>",
       to:[email], subject:"Your Umanage signup verification code",
       html:`<h2>Verify your email</h2><p>Your Umanage signup code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p>This code expires in 5 minutes. If you did not request it, ignore this email.</p>`,
       text:`Your Umanage signup code is ${code}. It expires in 5 minutes.`,
