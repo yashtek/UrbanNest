@@ -1,5 +1,7 @@
 import { ensureEmailOtpIndexes } from "./otp/email-otp.service";
 import { Hono } from "hono";
+import staffAttendanceRoutes from "./routes/staffAttendance.routes";
+import { ensureStaffAttendanceIndexes } from "./modals/staffAttendance.modal";
 import { connectDB } from "./db/db";
 import { errorHandler } from "./middleware/error.middleware";
 import authRoutes from "./routes/auth.routes";
@@ -26,6 +28,7 @@ await ensureOtpIndexes();
 await ensureEmailOtpIndexes();
 await ensureRoomIndexes();
 await ensureCommonOptionIndexes();
+await ensureStaffAttendanceIndexes();
 
 app.onError(errorHandler);
 
@@ -36,6 +39,7 @@ app.route("/business", roomRoute)
 app.route("/business", tenantRoutes);
 app.route("/business", rentRoutes);
 app.route("/business", staffRoutes);
+app.route("/business", staffAttendanceRoutes);
 app.route("/business", expenseRoutes);
 app.route("/business", dashboardRoutes);
 app.route("/feedback", feedbackRoutes);
