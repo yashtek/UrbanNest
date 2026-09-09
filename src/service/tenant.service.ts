@@ -1,4 +1,5 @@
-import { ObjectId } from "mongodb";
+import { ObjectId, type Filter } from "mongodb";
+import { nameSearch } from "../utils/nameSearch";
 import { getPagination, type PaginationOptions } from "../utils/pagination";
 import { ITenant, tenants } from "../modals/tenant.modal";
 import { AppError } from "../middleware/error.middleware";
@@ -207,16 +208,18 @@ export class tenantservice {
   async getAll(
     businessId: string,
     roomId: string,
-    options: PaginationOptions = {},
+    options: PaginationOptions & { name?: string } = {},
   ) {
     const { page, limit, skip } = getPagination(options);
     if (!ObjectId.isValid(businessId))
       throw new AppError("Invalid businessId", 400);
     if (!ObjectId.isValid(roomId)) throw new AppError("Invalid roomId", 400);
-    const filter = {
+    const filter: Filter<ITenant> = {
       businessId: new ObjectId(businessId),
       roomId: new ObjectId(roomId),
     };
+    const name = nameSearch(options.name);
+    if (name) filter.name = name;
     const collection = tenants();
     const [rows, total] = await Promise.all([
       collection

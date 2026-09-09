@@ -72,6 +72,7 @@ class StaffController {
         page: parsePositiveInteger("page", 1),
         limit: parsePositiveInteger("limit", 10),
         staff_role: c.req.query("staff_role")?.trim() || undefined,
+        name: c.req.query("name"),
       }),
     );
   }

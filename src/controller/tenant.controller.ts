@@ -115,7 +115,7 @@ class TenantController {
       await tenantService.getAll(
         businessId,
         roomId,
-        parsePagination(c.req.query("page"), c.req.query("limit")),
+        { ...parsePagination(c.req.query("page"), c.req.query("limit")), name: c.req.query("name") },
       ),
     );
   }

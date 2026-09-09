@@ -1,4 +1,5 @@
 import { ObjectId, type Filter } from "mongodb";
+import { nameSearch } from "../utils/nameSearch";
 import { AppError } from "../middleware/error.middleware";
 import { staffs, type IStaff } from "../modals/staff.modal";
 import { staffDuties } from "../modals/staffDuty.modal";
@@ -69,7 +70,7 @@ class StaffService {
 
   async getAll(
     businessId: string,
-    options: { page?: number; limit?: number; staff_role?: string } = {},
+    options: { page?: number; limit?: number; staff_role?: string; name?: string } = {},
   ) {
     const { page = 1, limit = 10, staff_role } = options;
     if (!ObjectId.isValid(businessId))
@@ -84,6 +85,8 @@ class StaffService {
       throw new AppError("page is too large", 400);
 
     const filter: Filter<IStaff> = { businessId: new ObjectId(businessId) };
+    const name = nameSearch(options.name);
+    if (name) filter.name = name;
     if (staff_role) {
       if (!ObjectId.isValid(staff_role))
         throw new AppError("Invalid staff_role id", 400);
