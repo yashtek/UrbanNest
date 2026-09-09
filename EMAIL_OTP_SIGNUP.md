@@ -12,7 +12,7 @@ No API keys or recipient addresses are hardcoded. No actual email was sent in te
    resendAfter:30 only after Resend accepts the email. Acceptance is not delivery.
 2. POST /auth/verify-signup-otp
    { "email": "person@example.com", "otp": "123456" }
-   Returns data.verificationToken and expiresIn:300 after matching the stored hash.
+   Returns data.verificationToken and expiresIn:1800 after matching the stored hash.
 3. POST /auth/complete-signup
    { "email": "person@example.com", "verificationToken": "<returned token>",
      "phoneNumber": "+919876543210", "fullName": "Test User",
@@ -39,3 +39,27 @@ Sources:
 https://resend.com/docs/api-reference/emails/send-email
 https://resend.com/docs/knowledge-base/403-error-resend-dev-domain
 https://www.mongodb.com/docs/manual/core/index-ttl/
+
+## Resend and password recovery (email)
+
+All paths below use POST with JSON. Signup resend: `/auth/resend-signup-otp`
+with `{ "email": "person@example.com" }` (the send endpoint also resends).
+Cooldown: 30 seconds; maximum 3 sends per email per purpose per 15 minutes.
+Each OTP expires in 5 minutes.
+
+Password recovery now accepts email instead of phoneNumber:
+1. `/auth/forgot-password/send-otp` or `/auth/forgot-password/resend-otp`
+   with `{ "email": "person@example.com" }`.
+2. `/auth/forgot-password/verify-otp` with
+   `{ "email": "person@example.com", "otp": "123456" }`.
+   Save `data.verificationToken` (valid for 5 minutes).
+3. `/auth/forgot-password/reset` with
+   `{ "email": "person@example.com", "verificationToken": "<token>", "password": "NewStrongPass123!" }`.
+   Successful reset invalidates existing login tokens. Reset proofs cannot authorize signup.
+
+Complete signup: keep the verified email, verificationToken, and form details on
+400 validation or 409 duplicate-field errors. Show the error and let the user edit
+and resubmit `/auth/complete-signup` with the same token. Signup verification lasts
+30 minutes; rejected database writes restore the token with its original expiry.
+A 403 means verification is expired, already used, or invalid and requires verifying
+email again. Do not navigate back to signup for every API error.

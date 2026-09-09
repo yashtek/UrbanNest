@@ -1,10 +1,10 @@
-import { sendSignupEmailOtp, verifySignupEmailOtp, consumeSignupEmailProof } from "../otp/email-otp.service";
+import { sendSignupEmailOtp, verifySignupEmailOtp, consumeSignupEmailProof, restoreEmailProof } from "../otp/email-otp.service";
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 import { users, type IUser } from "../modals/user.modal";
 import { AppError } from "../middleware/error.middleware";
 import { createAccessToken } from "../utils/token";
-import { otpService, OtpPurpose } from "../otp/otp.service";
+
 
 const HASH_ROUNDS = 12;
 const publicUser = (user: IUser) => ({
@@ -33,20 +33,15 @@ export type UpdateProfileInput = {
 // Verify the signup OTP for a phone number.
 export const sendSignupOtp = sendSignupEmailOtp;
 export const verifySignupOtp = verifySignupEmailOtp;
-// Send a password reset OTP only when the account exists.
-export const sendPasswordResetOtp = async (phoneNumber: string) => {
-  // Deliberately generic to avoid exposing whether a phone number has an account.
-  if (await users().findOne({ phoneNumber }, { projection: { _id: 1 } }))
-    await otpService.send(phoneNumber, OtpPurpose.PASSWORD_RESET);
+// Send and verify purpose-specific email OTPs for existing accounts.
+export const sendPasswordResetOtp = async (email: string) => {
+  if (await users().findOne({ email, isDeleted: { $ne: true } }))
+    await sendSignupEmailOtp(email, "password_reset");
 };
-// Verify a password reset OTP before allowing the password change.
-export const verifyPasswordResetOtp = async (
-  phoneNumber: string,
-  code: string,
-) => {
-  if (!(await users().findOne({ phoneNumber }, { projection: { _id: 1 } })))
+export const verifyPasswordResetOtp = async (email: string, code: string) => {
+  if (!(await users().findOne({ email, isDeleted: { $ne: true } })))
     throw new AppError("Invalid or expired OTP", 400);
-  await otpService.verify(phoneNumber, OtpPurpose.PASSWORD_RESET, code);
+  return verifySignupEmailOtp(email, code, "password_reset");
 };
 
 // Create a new user after phone verification.
@@ -58,7 +53,6 @@ export const completeSignup = async (input: {
   username: string;
   password: string;
 }) => {
-  await consumeSignupEmailProof(input.email, input.verificationToken);
   const time = new Date();
   const user: IUser = {
     _id: new ObjectId(),
@@ -75,9 +69,11 @@ export const completeSignup = async (input: {
     createdAt: time,
     updatedAt: time,
   };
+  const proof = await consumeSignupEmailProof(input.email, input.verificationToken);
   try {
     await users().insertOne(user);
   } catch (error: any) {
+    await restoreEmailProof(proof);
     if (error?.code === 11000) {
       const field = Object.keys(error.keyPattern ?? error.keyValue ?? {})[0];
       throw new AppError(
@@ -119,20 +115,19 @@ export const logout = async (userId: string) => {
   );
 };
 // Reset a password after OTP verification.
-export const resetPassword = async (phoneNumber: string, password: string) => {
-  await otpService.requireVerified(phoneNumber, OtpPurpose.PASSWORD_RESET);
-  const result = await users().updateOne(
-    { phoneNumber },
-    {
-      $set: {
-        passwordHash: await bcrypt.hash(password, HASH_ROUNDS),
-        updatedAt: new Date(),
-      },
-      $inc: { tokenVersion: 1 },
-    },
-  );
-  if (!result.matchedCount) throw new AppError("Unable to reset password", 400);
-  await otpService.consumeVerified(phoneNumber, OtpPurpose.PASSWORD_RESET);
+export const resetPassword = async (email: string, password: string, verificationToken: string) => {
+  const passwordHash = await bcrypt.hash(password, HASH_ROUNDS);
+  const proof = await consumeSignupEmailProof(email, verificationToken, "password_reset");
+  try {
+    const result = await users().updateOne(
+      { email, isDeleted: { $ne: true } },
+      { $set: { passwordHash, updatedAt: new Date() }, $inc: { tokenVersion: 1 } },
+    );
+    if (!result.matchedCount) throw new AppError("Unable to reset password", 400);
+  } catch (error) {
+    await restoreEmailProof(proof, "password_reset");
+    throw error;
+  }
 };
 // Check whether a username is available.
 export const usernameAvailable = async (username: string) =>

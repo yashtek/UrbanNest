@@ -47,7 +47,7 @@ export const loginSchema = z.object({
   username: z.string().trim().min(1),
   password: z.string().min(1),
 });
-export const resetPasswordSchema = z.object({ phoneNumber: phone, password });
+export const resetPasswordSchema = z.object({ email: signupEmail, password, verificationToken: z.string().regex(/^[a-f0-9]{64}$/) });
 export const usernameQuerySchema = z.object({
   username: z
     .string()

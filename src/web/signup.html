@@ -1,11 +1,11 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Umanage signup</title><style>body{font:16px system-ui;background:#f3f6fa;color:#182b3a}main{max-width:420px;margin:6vh auto;background:white;padding:28px;border-radius:14px}label,input,button{display:block}input,button{box-sizing:border-box;width:100%;padding:12px;margin:10px 0;font:inherit}button{cursor:pointer}button:disabled{opacity:.5}#status{min-height:3em}</style></head><body><main><h1>Create your account</h1>
-<form id="phoneForm"><label for="phone">Phone number with country code</label><input id="phone" type="tel" autocomplete="tel" placeholder="+919876543210" pattern="\+[1-9][0-9]{7,14}" required><div id="captcha"></div><button id="send" disabled>Send OTP</button></form>
-<form id="otpForm" hidden><label for="otp">OTP</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{4,8}" required><button id="verify">Verify phone</button><button id="resend" type="button">Resend OTP</button></form>
-<form id="signupForm" hidden><label for="fullName">Full name</label><input id="fullName" autocomplete="name" minlength="2" maxlength="100" required><label for="username">Username</label><input id="username" autocomplete="username" pattern="[A-Za-z0-9_]{5,30}" required><label for="password">Password (8+ characters, upper/lowercase, number and symbol)</label><input id="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required><button id="complete">Create account</button></form>
+<form id="phoneForm"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" required><button id="send">Send OTP</button></form>
+<form id="otpForm" hidden><label for="otp">OTP</label><input id="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required><button id="verify">Verify email</button><button id="resend" type="button">Resend OTP</button></form>
+<form id="signupForm" hidden><label for="phone">Phone number with country code</label><input id="phone" type="tel" autocomplete="tel" placeholder="+919876543210" pattern="\+[1-9][0-9]{7,14}" required><label for="fullName">Full name</label><input id="fullName" autocomplete="name" minlength="2" maxlength="100" required><label for="username">Username</label><input id="username" autocomplete="username" pattern="[A-Za-z0-9_]{5,30}" required><label for="password">Password (8+ characters, upper/lowercase, number and symbol)</label><input id="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required><button id="complete">Create account</button></form>
 <button id="restart" type="button">Start again</button><p id="status" role="status" aria-live="polite">Loading phone verification�</p></main>
 <script type="module">
 const el = id => document.getElementById(id);
-let ready = false, busy = false, verified = false, done = false, phoneNumber, resendAt = 0, pendingToken;
+let ready = true, busy = false, verified = false, done = false, email, resendAt = 0, verificationToken;
 const say = message => { el('status').textContent = message; };
 function update() {
   el('send').disabled = busy || !ready || verified || done || Date.now() < resendAt;
@@ -27,53 +27,26 @@ async function run(action) {
   if(busy) return; busy = true; update();
   try { await action(); } catch(error) { say(error.message); } finally { busy = false; update(); }
 }
-function widget(method,value) {
-  return new Promise((resolve,reject) => {
-    const timer = setTimeout(()=>reject(new Error('Widget request timed out. Please retry or start again.')),30000);
-    const fail = () => { clearTimeout(timer); reject(new Error('OTP request failed. Check the code, resend OTP, or start again.')); };
-    try { window[method](value,data=>{clearTimeout(timer); if(data?.type==='error') fail(); else resolve(data);},fail); }
-    catch { fail(); }
-  });
-}
 el('phoneForm').onsubmit = event => {event.preventDefault();run(async()=>{
-  phoneNumber = el('phone').value.trim();
-  await widget('sendOtp',phoneNumber.slice(1));
-  resendAt=Date.now()+30000; el('phone').readOnly=true; el('send').hidden=true; el('otpForm').hidden=false;
-  say('OTP sent. Enter the code you received.'); el('otp').focus();
+  email = el('email').value.trim().toLowerCase();
+  const result = await api('send-signup-otp',{email});
+  resendAt=Date.now()+result.resendAfter*1000; el('email').readOnly=true; el('send').hidden=true; el('otpForm').hidden=false;
+  say('OTP sent to your email. Enter the code you received.'); el('otp').focus();
 });};
 el('otpForm').onsubmit = event => {event.preventDefault();run(async()=>{
-  if (!pendingToken) {
-    const data = await widget('verifyOtp',el('otp').value);
-    pendingToken = typeof data==='string' ? data : data?.['access-token'] ?? data?.message;
-    if(typeof pendingToken!=='string' || !pendingToken) {pendingToken=undefined;throw new Error('Widget returned no access token. Start again.');}
-  }
-  // The account authkey is used only by the backend, never by this page.
-  await api('verify-signup-otp',{phoneNumber,accessToken:pendingToken});
-  pendingToken=undefined; verified=true; el('otp').value=''; el('otpForm').hidden=true; el('signupForm').hidden=false;
-  say('Phone verified. Complete signup within 10 minutes.');
+  const result = await api('verify-signup-otp',{email,otp:el('otp').value});
+  verificationToken=result.verificationToken; verified=true; el('otp').value=''; el('otpForm').hidden=true; el('signupForm').hidden=false;
+  say('Email verified. Complete signup within '+Math.floor(result.expiresIn/60)+' minutes. You can correct details and retry if needed.');
 });};
 el('resend').onclick = ()=>run(async()=>{
-  resendAt=Date.now()+30000; await widget('retryOtp',null); pendingToken=undefined; el('otp').value='';say('OTP resent. Enter the received code.');
+  const result=await api('resend-signup-otp',{email});
+  resendAt=Date.now()+result.resendAfter*1000; el('otp').value='';say('OTP resent to your email.');
 });
 el('signupForm').onsubmit = event => {event.preventDefault();run(async()=>{
-  const session=await api('complete-signup',{phoneNumber,fullName:el('fullName').value,username:el('username').value,password:el('password').value});
+  const session=await api('complete-signup',{email,verificationToken,phoneNumber:el('phone').value.trim(),fullName:el('fullName').value,username:el('username').value,password:el('password').value});
   el('password').value=''; done=true; window.UmanageSession=session;
   window.dispatchEvent(new CustomEvent('Umanage:signup',{detail:session}));say('Account created. Welcome, '+session.user.fullName+'.');
 });};
 el('restart').onclick=()=>location.reload();
-try {
-  const config=await api('signup-widget-config');
-  await new Promise((resolve,reject)=>{
-    const timer=setTimeout(()=>reject(new Error('Unable to load widget. Reload to retry.')),15000);
-    const script=document.createElement('script');script.src='https://verify.msg91.com/otp-provider.js';
-    script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);reject(new Error('Unable to load widget. Reload to retry.'));};document.head.append(script);
-  });
-  window.initSendOTP({widgetId:config.widgetId,tokenAuth:config.tokenAuth,exposeMethods:true,captchaRenderId:'captcha'});
-  const deadline=Date.now()+15000;
-  while (!['sendOtp','verifyOtp','retryOtp'].every(method=>typeof window[method]==='function')) {
-    if(Date.now()>deadline)throw new Error('Widget initialization failed. Reload to retry.');
-    await new Promise(resolve=>setTimeout(resolve,100));
-  }
-  ready=true;update();say('Enter your phone number to receive OTP.');
-} catch(error){say(error.message);}
+update();say('Enter your email address to receive OTP.');
 </script></body></html>

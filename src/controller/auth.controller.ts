@@ -120,19 +120,18 @@ export const checkUsername = async (c: Context) => {
 };
 // Send a password reset OTP when the account exists.
 export const sendForgotPasswordOtp = async (c: Context) => {
-  const { phoneNumber } = await body(c, phoneSchema);
-  await auth.sendPasswordResetOtp(phoneNumber);
+  const { email } = await body(c, sendSignupOtpSchema);
+  await auth.sendPasswordResetOtp(email);
   return ok(c, "If that account exists, an OTP has been sent");
 };
 // Verify the password reset OTP before allowing a reset.
 export const verifyForgotPasswordOtp = async (c: Context) => {
-  const { phoneNumber, otp } = await body(c, verifyOtpSchema);
-  await auth.verifyPasswordResetOtp(phoneNumber, otp);
-  return ok(c, "OTP verified. You may now reset your password.");
+  const { email, otp } = await body(c, verifySignupOtpSchema);
+  return ok(c, "OTP verified. You may now reset your password.", await auth.verifyPasswordResetOtp(email, otp));
 };
 // Reset the password after OTP verification.
 export const resetPassword = async (c: Context) => {
   const input = await body(c, resetPasswordSchema);
-  await auth.resetPassword(input.phoneNumber, input.password);
+  await auth.resetPassword(input.email, input.password, input.verificationToken);
   return ok(c, "Password reset successfully. Please log in again.");
 };

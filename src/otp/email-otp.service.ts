@@ -6,20 +6,23 @@ import { AppError } from "../middleware/error.middleware";
 
 type Challenge = { _id: string; codeHash: string; expiresAt: Date; attempts: number; ready: boolean };
 type Proof = { _id: string; email: string; expiresAt: Date };
-const challenges = () => getDB().collection<Challenge>("signup_email_otps");
-const proofs = () => getDB().collection<Proof>("signup_email_proofs");
+type Purpose = "signup" | "password_reset";
+const challenges = (purpose: Purpose = "signup") => getDB().collection<Challenge>(`${purpose}_email_otps`);
+const proofs = (purpose: Purpose = "signup") => getDB().collection<Proof>(`${purpose}_email_proofs`);
 const digest = (value: string) => crypto.createHash("sha256").update(value).digest("hex");
 export const ensureEmailOtpIndexes = async () => {
-  await challenges().createIndex({expiresAt:1},{expireAfterSeconds:0});
-  await proofs().createIndex({expiresAt:1},{expireAfterSeconds:0});
-  await getDB().collection("signup_email_limits").createIndex({expiresAt:1},{expireAfterSeconds:0});
+  for (const purpose of ["signup", "password_reset"] as const) {
+  await challenges(purpose).createIndex({expiresAt:1},{expireAfterSeconds:0});
+  await proofs(purpose).createIndex({expiresAt:1},{expireAfterSeconds:0});
+  await getDB().collection(`${purpose}_email_limits`).createIndex({expiresAt:1},{expireAfterSeconds:0});
+  }
 };
 
-export async function sendSignupEmailOtp(email: string) {
+export async function sendSignupEmailOtp(email: string, purpose: Purpose = "signup") {
   const key = process.env.RESEND_KEY?.trim();
   if (!key) throw new AppError("Configure RESEND_KEY for signup email",503);
   const now = new Date();
-  const limits = getDB().collection<{_id:string; count:number; lastSentAt:Date; expiresAt:Date}>("signup_email_limits");
+  const limits = getDB().collection<{_id:string; count:number; lastSentAt:Date; expiresAt:Date}>(`${purpose}_email_limits`);
   await limits.deleteOne({_id:email,expiresAt:{$lte:now}});
   try {
     const reserved = await limits.findOneAndUpdate({_id:email,count:{$lt:3},lastSentAt:{$lte:new Date(Date.now()-30_000)}},
@@ -30,42 +33,50 @@ export async function sendSignupEmailOtp(email: string) {
     if(error?.code===11000)throw new AppError("Wait 30 seconds before resending. Maximum 3 emails per 15 minutes.",429);
     throw error;
   }
+  const label = purpose === "signup" ? "signup" : "password reset";
   const code = crypto.randomInt(100000,1_000_000).toString();
   const codeHash = await bcrypt.hash(code,10);
   const expiresAt = new Date(Date.now()+300_000);
-  await challenges().replaceOne({_id:email},{codeHash,expiresAt,attempts:0,ready:false},{upsert:true});
+  await challenges(purpose).replaceOne({_id:email},{codeHash,expiresAt,attempts:0,ready:false},{upsert:true});
   try {
     const resend = new Resend(key);
     const {data,error} = await resend.emails.send({
       from: process.env.RESEND_FROM?.trim() || "Umanage <noreply@yashtek.in>",
-      to:[email], subject:"Your Umanage signup verification code",
-      html:`<h2>Verify your email</h2><p>Your Umanage signup code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p>This code expires in 5 minutes. If you did not request it, ignore this email.</p>`,
-      text:`Your Umanage signup code is ${code}. It expires in 5 minutes.`,
+      to:[email], subject:`Your Umanage ${label} verification code`,
+      html:`<h2>Verify your email</h2><p>Your Umanage ${label} code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p>This code expires in 5 minutes. If you did not request it, ignore this email.</p>`,
+      text:`Your Umanage ${label} code is ${code}. It expires in 5 minutes.`,
     });
     if(error || !data?.id) throw new AppError("Resend could not send the OTP email. Check sender configuration and try again.",502);
-    const activated = await challenges().updateOne({_id:email,codeHash,expiresAt:{$gt:new Date()}},{$set:{ready:true}});
+    const activated = await challenges(purpose).updateOne({_id:email,codeHash,expiresAt:{$gt:new Date()}},{$set:{ready:true}});
     if(!activated.modifiedCount)throw new AppError("OTP request expired or was replaced. Request a new code.",409);
     return {emailId:data.id,expiresIn:300,resendAfter:30};
   } catch(error) {
-    await challenges().deleteOne({_id:email,codeHash});
+    await challenges(purpose).deleteOne({_id:email,codeHash});
     if(error instanceof AppError)throw error;
     throw new AppError("Email service unavailable. Please try again later.",503);
   }
 }
 
-export async function verifySignupEmailOtp(email: string, otp: string) {
+export async function verifySignupEmailOtp(email: string, otp: string, purpose: Purpose = "signup") {
   // Reserve each attempt atomically before comparing the hash.
-  const current = await challenges().findOneAndUpdate({_id:email,ready:true,expiresAt:{$gt:new Date()},attempts:{$lt:5}},
+  const current = await challenges(purpose).findOneAndUpdate({_id:email,ready:true,expiresAt:{$gt:new Date()},attempts:{$lt:5}},
     {$inc:{attempts:1}},{returnDocument:"after"});
   if(!current || !await bcrypt.compare(otp,current.codeHash))throw new AppError("Invalid or expired OTP (maximum 5 attempts).",400);
-  const consumed = await challenges().findOneAndDelete({_id:email,codeHash:current.codeHash,ready:true,expiresAt:{$gt:new Date()}});
+  const consumed = await challenges(purpose).findOneAndDelete({_id:email,codeHash:current.codeHash,ready:true,expiresAt:{$gt:new Date()}});
   if(!consumed)throw new AppError("OTP expired, replaced or already used",400);
   const verificationToken = crypto.randomBytes(32).toString("hex");
-  await proofs().insertOne({_id:digest(verificationToken),email,expiresAt:new Date(Date.now()+300_000)});
-  return {verificationToken,expiresIn:300};
+  const expiresIn = purpose === "signup" ? 1800 : 300;
+  await proofs(purpose).insertOne({_id:digest(verificationToken),email,expiresAt:new Date(Date.now()+expiresIn*1000)});
+  return {verificationToken,expiresIn};
 }
 
-export async function consumeSignupEmailProof(email: string, verificationToken: string) {
-  const proof = await proofs().findOneAndDelete({_id:digest(verificationToken),email,expiresAt:{$gt:new Date()}});
-  if(!proof)throw new AppError("Verify your signup email first. Verification is missing, expired or already used.",403);
+export async function consumeSignupEmailProof(email: string, verificationToken: string, purpose: Purpose = "signup") {
+  const proof = await proofs(purpose).findOneAndDelete({_id:digest(verificationToken),email,expiresAt:{$gt:new Date()}});
+  if(!proof)throw new AppError("Verify your email first. Verification is missing, expired or already used.",403);
+  return proof;
+}
+
+// Restore a claimed proof only after a rejected write so corrected details can be retried.
+export async function restoreEmailProof(proof: Proof, purpose: Purpose = "signup") {
+  if (proof.expiresAt > new Date()) await proofs(purpose).insertOne(proof);
 }

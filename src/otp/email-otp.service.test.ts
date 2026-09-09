@@ -29,7 +29,7 @@ mock.module('../db/db',()=>({getDB:()=>({collection:(name:string)=>{
  };
 }})}));
 mock.module('resend',()=>({Resend:class {emails={send:async(value:any)=>{sent=value;return fail?{error:{message:'rejected'}}:{data:{id:'email-reference'}};}}}}));
-const {sendSignupEmailOtp,verifySignupEmailOtp,consumeSignupEmailProof}=await import('./email-otp.service');
+const {sendSignupEmailOtp,verifySignupEmailOtp,consumeSignupEmailProof,restoreEmailProof}=await import('./email-otp.service');
 const savedKey=process.env.RESEND_KEY;
 beforeEach(()=>{collections.clear();sent=undefined;fail=false;process.env.RESEND_KEY='test-key';});
 afterEach(()=>{if(savedKey===undefined)delete process.env.RESEND_KEY;else process.env.RESEND_KEY=savedKey;});
@@ -66,4 +66,37 @@ test('five wrong attempts exhaust code; cooldown prevents immediate resend',asyn
 test('failed email sending removes code and never returns success',async()=>{
  fail=true;await expect(sendSignupEmailOtp(email)).rejects.toMatchObject({statusCode:502});
  expect(table('signup_email_otps').has(email)).toBe(false);
+});
+
+test('signup proof can be restored after a rejected submission without extending its expiry',async()=>{
+ await sendSignupEmailOtp(email);
+ const result=await verifySignupEmailOtp(email,code());
+ expect(result.expiresIn).toBe(1800);
+ const proof=await consumeSignupEmailProof(email,result.verificationToken);
+ await expect(consumeSignupEmailProof(email,result.verificationToken)).rejects.toMatchObject({statusCode:403});
+ await restoreEmailProof(proof);
+ const retried=await consumeSignupEmailProof(email,result.verificationToken);
+ expect(retried.expiresAt).toEqual(proof.expiresAt);
+ await expect(consumeSignupEmailProof(email,result.verificationToken)).rejects.toMatchObject({statusCode:403});
+});
+test('password reset email codes and proofs cannot authorize signup',async()=>{
+ await sendSignupEmailOtp(email,'password_reset');
+ expect(sent.to).toEqual([email]);
+ expect(sent.subject).toContain('password reset');
+ const resetCode=code();
+ await expect(verifySignupEmailOtp(email,resetCode)).rejects.toMatchObject({statusCode:400});
+ const result=await verifySignupEmailOtp(email,resetCode,'password_reset');
+ expect(result.expiresIn).toBe(300);
+ await expect(consumeSignupEmailProof(email,result.verificationToken)).rejects.toMatchObject({statusCode:403});
+ await expect(consumeSignupEmailProof('other@example.com',result.verificationToken,'password_reset')).rejects.toMatchObject({statusCode:403});
+ await consumeSignupEmailProof(email,result.verificationToken,'password_reset');
+ await expect(consumeSignupEmailProof(email,result.verificationToken,'password_reset')).rejects.toMatchObject({statusCode:403});
+});
+test('resending replaces the previous email code',async()=>{
+ await sendSignupEmailOtp(email);
+ const oldHash=table('signup_email_otps').get(email).codeHash;
+ table('signup_email_limits').get(email).lastSentAt=new Date(Date.now()-31000);
+ await sendSignupEmailOtp(email);
+ expect(table('signup_email_otps').get(email).codeHash).not.toBe(oldHash);
+ await verifySignupEmailOtp(email,code());
 });
