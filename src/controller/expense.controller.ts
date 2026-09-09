@@ -13,7 +13,8 @@ class ExpenseController {
 
       const body = await c.req.json();
 
-      if (typeof body?.category !== "string" || !body.category.trim()) throw new AppError("category id is required", 400);
+      if (typeof body?.category !== "string" || !body.category.trim())
+        throw new AppError("category id is required", 400);
 
       if (typeof body?.amount !== "number") {
         throw new AppError("amount is required", 400);
@@ -118,11 +119,18 @@ class ExpenseController {
         throw new AppError("amount must be a number", 400);
       }
 
-      if (body?.description !== undefined && typeof body.description !== "string") {
+      if (
+        body?.description !== undefined &&
+        typeof body.description !== "string"
+      ) {
         throw new AppError("description must be a string", 400);
       }
 
-      if (body?.date !== undefined && typeof body.date !== "string" && !(body.date instanceof Date)) {
+      if (
+        body?.date !== undefined &&
+        typeof body.date !== "string" &&
+        !(body.date instanceof Date)
+      ) {
         throw new AppError("date must be a string", 400);
       }
 

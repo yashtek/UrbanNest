@@ -25,7 +25,10 @@ export interface ExpenseFilters {
 
 class ExpenseService {
   async create(businessId: string, data: CreateExpenseDto) {
-    const category = await commonOptionService.require(data.category, "EXPENSE_CATEGORY");
+    const category = await commonOptionService.require(
+      data.category,
+      "EXPENSE_CATEGORY",
+    );
 
     const payload: IExpense = {
       _id: new ObjectId(),
@@ -49,7 +52,10 @@ class ExpenseService {
     };
 
     if (filters.category !== undefined) {
-      query.category = await commonOptionService.require(filters.category, "EXPENSE_CATEGORY");
+      query.category = await commonOptionService.require(
+        filters.category,
+        "EXPENSE_CATEGORY",
+      );
     }
 
     if (filters.date) {
@@ -90,7 +96,10 @@ class ExpenseService {
     };
 
     if (data.category !== undefined) {
-      updateFields.category = await commonOptionService.require(data.category, "EXPENSE_CATEGORY");
+      updateFields.category = await commonOptionService.require(
+        data.category,
+        "EXPENSE_CATEGORY",
+      );
     }
 
     if (data.amount !== undefined) {

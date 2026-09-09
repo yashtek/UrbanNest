@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
-import { feedbacks, type FeedbackCategory, type IFeedback } from "../modals/feedback.modal";
+import {
+  feedbacks,
+  type FeedbackCategory,
+  type IFeedback,
+} from "../modals/feedback.modal";
 
 export const createFeedback = async (
   userId: string,

@@ -17,7 +17,10 @@ export const createLegalDocument = async (
     sections: LegalSection[];
   },
 ) => {
-  const duplicate = await legalDocuments().findOne({ type, version: input.version });
+  const duplicate = await legalDocuments().findOne({
+    type,
+    version: input.version,
+  });
   if (duplicate) {
     throw new AppError("This legal document version already exists", 409);
   }

@@ -42,7 +42,9 @@ class StaffController {
       isActive:
         typeof body.isActive === "boolean"
           ? body.isActive
-          : (() => { throw new AppError("isActive must be a boolean", 400); })(),
+          : (() => {
+              throw new AppError("isActive must be a boolean", 400);
+            })(),
       shift: requiredString(body.shift, "shift"),
       date: requiredDate(body.date, "date"),
       status: requiredString(body.status, "status"),
@@ -65,11 +67,13 @@ class StaffController {
       return value;
     };
 
-    return c.json(await staffService.getAll(businessId, {
-      page: parsePositiveInteger("page", 1),
-      limit: parsePositiveInteger("limit", 10),
-      staff_role: c.req.query("staff_role")?.trim() || undefined,
-    }));
+    return c.json(
+      await staffService.getAll(businessId, {
+        page: parsePositiveInteger("page", 1),
+        limit: parsePositiveInteger("limit", 10),
+        staff_role: c.req.query("staff_role")?.trim() || undefined,
+      }),
+    );
   }
 
   async getById(c: Context) {
@@ -92,17 +96,23 @@ class StaffController {
     const data: UpdateStaffDto = {};
 
     if (body.name !== undefined) data.name = requiredString(body.name, "name");
-    if (body.phone !== undefined) data.phone = requiredString(body.phone, "phone");
+    if (body.phone !== undefined)
+      data.phone = requiredString(body.phone, "phone");
     if (body.role !== undefined) data.role = requiredString(body.role, "role");
-    if (body.salary !== undefined) data.salary = requiredNumber(body.salary, "salary");
-    if (body.joiningDate !== undefined) data.joiningDate = requiredDate(body.joiningDate, "joiningDate");
+    if (body.salary !== undefined)
+      data.salary = requiredNumber(body.salary, "salary");
+    if (body.joiningDate !== undefined)
+      data.joiningDate = requiredDate(body.joiningDate, "joiningDate");
     if (body.isActive !== undefined) {
-      if (typeof body.isActive !== "boolean") throw new AppError("isActive must be a boolean", 400);
+      if (typeof body.isActive !== "boolean")
+        throw new AppError("isActive must be a boolean", 400);
       data.isActive = body.isActive;
     }
-    if (body.shift !== undefined) data.shift = requiredString(body.shift, "shift");
+    if (body.shift !== undefined)
+      data.shift = requiredString(body.shift, "shift");
     if (body.date !== undefined) data.date = requiredDate(body.date, "date");
-    if (body.status !== undefined) data.status = requiredString(body.status, "status");
+    if (body.status !== undefined)
+      data.status = requiredString(body.status, "status");
     if (body.staffSalary !== undefined) {
       data.staffSalary = requiredString(body.staffSalary, "staffSalary");
     }

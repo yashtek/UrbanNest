@@ -70,23 +70,37 @@ class TenantController {
     const data: updateTenant = {};
 
     if (body.name !== undefined) data.name = requiredString(body.name, "name");
-    if (body.phone !== undefined) data.phone = requiredString(body.phone, "phone");
-    if (body.aadhaar !== undefined) data.aadhaar = requiredString(body.aadhaar, "aadhaar");
-    if (body.joiningDate !== undefined) data.joiningDate = requiredDate(body.joiningDate, "joiningDate");
+    if (body.phone !== undefined)
+      data.phone = requiredString(body.phone, "phone");
+    if (body.aadhaar !== undefined)
+      data.aadhaar = requiredString(body.aadhaar, "aadhaar");
+    if (body.joiningDate !== undefined)
+      data.joiningDate = requiredDate(body.joiningDate, "joiningDate");
     if (body.leavingDate !== undefined) {
-      data.leavingDate = body.leavingDate === null ? null : requiredDate(body.leavingDate, "leavingDate");
+      data.leavingDate =
+        body.leavingDate === null
+          ? null
+          : requiredDate(body.leavingDate, "leavingDate");
     }
     if (body.rent !== undefined) data.rent = requiredNumber(body.rent, "rent");
     if (body.securityDeposit !== undefined) {
-      data.securityDeposit = requiredNumber(body.securityDeposit, "securityDeposit");
+      data.securityDeposit = requiredNumber(
+        body.securityDeposit,
+        "securityDeposit",
+      );
     }
-    if (body.month !== undefined) data.month = requiredString(body.month, "month");
-    if (body.amount !== undefined) data.amount = requiredNumber(body.amount, "amount");
+    if (body.month !== undefined)
+      data.month = requiredString(body.month, "month");
+    if (body.amount !== undefined)
+      data.amount = requiredNumber(body.amount, "amount");
     if (body.paidDate !== undefined) {
-      data.paidDate = body.paidDate === null ? null : requiredDate(body.paidDate, "paidDate");
+      data.paidDate =
+        body.paidDate === null ? null : requiredDate(body.paidDate, "paidDate");
     }
-    if (body.dueDate !== undefined) data.dueDate = requiredDate(body.dueDate, "dueDate");
-    if (body.status !== undefined) data.status = requiredString(body.status, "status");
+    if (body.dueDate !== undefined)
+      data.dueDate = requiredDate(body.dueDate, "dueDate");
+    if (body.status !== undefined)
+      data.status = requiredString(body.status, "status");
 
     return c.json(await tenantService.update(businessId, tenantId, data));
   }
@@ -97,7 +111,13 @@ class TenantController {
     if (!businessId || !roomId) {
       throw new AppError("businessId and roomId are required", 400);
     }
-    return c.json(await tenantService.getAll(businessId, roomId, parsePagination(c.req.query("page"), c.req.query("limit"))));
+    return c.json(
+      await tenantService.getAll(
+        businessId,
+        roomId,
+        parsePagination(c.req.query("page"), c.req.query("limit")),
+      ),
+    );
   }
 
   async getById(c: Context) {

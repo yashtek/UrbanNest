@@ -1,10 +1,14 @@
-import { sendSignupEmailOtp, verifySignupEmailOtp, consumeSignupEmailProof, restoreEmailProof } from "../otp/email-otp.service";
+import {
+  sendSignupEmailOtp,
+  verifySignupEmailOtp,
+  consumeSignupEmailProof,
+  restoreEmailProof,
+} from "../otp/email-otp.service";
 import bcrypt from "bcrypt";
 import { ObjectId } from "mongodb";
 import { users, type IUser } from "../modals/user.modal";
 import { AppError } from "../middleware/error.middleware";
 import { createAccessToken } from "../utils/token";
-
 
 const HASH_ROUNDS = 12;
 const publicUser = (user: IUser) => ({
@@ -69,7 +73,10 @@ export const completeSignup = async (input: {
     createdAt: time,
     updatedAt: time,
   };
-  const proof = await consumeSignupEmailProof(input.email, input.verificationToken);
+  const proof = await consumeSignupEmailProof(
+    input.email,
+    input.verificationToken,
+  );
   try {
     await users().insertOne(user);
   } catch (error: any) {
@@ -115,15 +122,27 @@ export const logout = async (userId: string) => {
   );
 };
 // Reset a password after OTP verification.
-export const resetPassword = async (email: string, password: string, verificationToken: string) => {
+export const resetPassword = async (
+  email: string,
+  password: string,
+  verificationToken: string,
+) => {
   const passwordHash = await bcrypt.hash(password, HASH_ROUNDS);
-  const proof = await consumeSignupEmailProof(email, verificationToken, "password_reset");
+  const proof = await consumeSignupEmailProof(
+    email,
+    verificationToken,
+    "password_reset",
+  );
   try {
     const result = await users().updateOne(
       { email, isDeleted: { $ne: true } },
-      { $set: { passwordHash, updatedAt: new Date() }, $inc: { tokenVersion: 1 } },
+      {
+        $set: { passwordHash, updatedAt: new Date() },
+        $inc: { tokenVersion: 1 },
+      },
     );
-    if (!result.matchedCount) throw new AppError("Unable to reset password", 400);
+    if (!result.matchedCount)
+      throw new AppError("Unable to reset password", 400);
   } catch (error) {
     await restoreEmailProof(proof, "password_reset");
     throw error;
@@ -149,7 +168,10 @@ export const getUser = async (userId: string) => {
 export const getProfile = getUser;
 
 // Update the authenticated user's profile.
-export const updateProfile = async (userId: string, input: UpdateProfileInput) => {
+export const updateProfile = async (
+  userId: string,
+  input: UpdateProfileInput,
+) => {
   const userObjectId = new ObjectId(userId);
   const existingUser = await users().findOne({
     _id: userObjectId,
@@ -181,7 +203,8 @@ export const updateProfile = async (userId: string, input: UpdateProfileInput) =
       updateFields.emailVerified = false;
     } else {
       updateFields.email = input.email;
-      if (input.email !== existingUser.email) updateFields.emailVerified = false;
+      if (input.email !== existingUser.email)
+        updateFields.emailVerified = false;
     }
   }
 

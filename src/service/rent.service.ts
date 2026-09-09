@@ -23,7 +23,10 @@ export interface rentUpdate {
 export class rentService {
   // create rent details
   async create(businessId: string, tenantId: string, data: rentCreateDto) {
-    const status = await commonOptionService.require(data.status, "RENT_STATUS");
+    const status = await commonOptionService.require(
+      data.status,
+      "RENT_STATUS",
+    );
 
     const payload: IRent = {
       _id: new ObjectId(),
@@ -41,7 +44,7 @@ export class rentService {
     await rents().insertOne(payload);
     return (await commonOptionService.populate([payload], ["status"]))[0];
   }
-// update rent details
+  // update rent details
   async update(businessId: string, rentId: string, data: rentUpdate) {
     const payloadToUpdate: Partial<IRent> = {};
 
@@ -54,7 +57,10 @@ export class rentService {
     }
 
     if (data.status !== undefined) {
-      payloadToUpdate.status = await commonOptionService.require(data.status, "RENT_STATUS");
+      payloadToUpdate.status = await commonOptionService.require(
+        data.status,
+        "RENT_STATUS",
+      );
     }
 
     if (data.paidDate !== undefined) {
@@ -93,13 +99,15 @@ export class rentService {
 
     return (await commonOptionService.populate([rent], ["status"]))[0];
   }
-// get rent detail for a specific rent record
+  // get rent detail for a specific rent record
   async getById(businessId: string, rentId: string) {
     const row = await rents().findOne({
       _id: new ObjectId(rentId),
       businessId: new ObjectId(businessId),
     });
-    return row ? (await commonOptionService.populate([row], ["status"]))[0] : null;
+    return row
+      ? (await commonOptionService.populate([row], ["status"]))[0]
+      : null;
   }
 
   // get rent detail for a particular tenant
@@ -108,7 +116,9 @@ export class rentService {
       tenantId: new ObjectId(tenantId),
       businessId: new ObjectId(businessId),
     });
-    return row ? (await commonOptionService.populate([row], ["status"]))[0] : null;
+    return row
+      ? (await commonOptionService.populate([row], ["status"]))[0]
+      : null;
   }
 
   // delete rent details

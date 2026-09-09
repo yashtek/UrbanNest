@@ -61,7 +61,12 @@ class RoomController {
   async getAll(c: Context) {
     const businessId = c.req.param("businessId");
     if (!businessId) throw new AppError("businessId is required", 400);
-    return c.json(await roomService.getAll(businessId, parsePagination(c.req.query("page"), c.req.query("limit"))));
+    return c.json(
+      await roomService.getAll(
+        businessId,
+        parsePagination(c.req.query("page"), c.req.query("limit")),
+      ),
+    );
   }
 
   async update(c: Context) {
@@ -85,7 +90,8 @@ class RoomController {
       previousReading: optionalNumber(body.previousReading, "previousReading"),
       currentReading: optionalNumber(body.currentReading, "currentReading"),
       costPerunit: optionalNumber(body.costPerunit, "costPerunit"),
-      status: body.status === undefined ? undefined : toString(body.status, "status"),
+      status:
+        body.status === undefined ? undefined : toString(body.status, "status"),
     };
 
     return c.json(await roomService.update(businessId, roomId, data));

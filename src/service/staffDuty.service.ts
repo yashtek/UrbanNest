@@ -1,9 +1,6 @@
 import { ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
-import {
-  staffDuties,
-  type IStaffDuty,
-} from "../modals/staffDuty.modal";
+import { staffDuties, type IStaffDuty } from "../modals/staffDuty.modal";
 import { staffs } from "../modals/staff.modal";
 import { commonOptionService } from "./commonOption.service";
 
@@ -24,7 +21,8 @@ export interface UpdateStaffDutyDto {
 class StaffDutyService {
   async create(businessId: string, data: CreateStaffDutyDto) {
     const [shift, status] = await Promise.all([
-      commonOptionService.require(data.shift, "STAFF_SHIFT"), commonOptionService.require(data.status, "STAFF_DUTY_STATUS"),
+      commonOptionService.require(data.shift, "STAFF_SHIFT"),
+      commonOptionService.require(data.status, "STAFF_DUTY_STATUS"),
     ]);
 
     const businessObjectId = new ObjectId(businessId);
@@ -52,7 +50,9 @@ class StaffDutyService {
 
     await staffDuties().insertOne(payload);
 
-    return (await commonOptionService.populate([payload], ["shift", "status"]))[0];
+    return (
+      await commonOptionService.populate([payload], ["shift", "status"])
+    )[0];
   }
 
   async getAll(businessId: string) {
@@ -72,10 +72,16 @@ class StaffDutyService {
       throw new AppError("Staff duty not found", 404);
     }
 
-    return (await commonOptionService.populate([staffDuty], ["shift", "status"]))[0];
+    return (
+      await commonOptionService.populate([staffDuty], ["shift", "status"])
+    )[0];
   }
 
-  async update(businessId: string, staffDutyId: string, data: UpdateStaffDutyDto) {
+  async update(
+    businessId: string,
+    staffDutyId: string,
+    data: UpdateStaffDutyDto,
+  ) {
     const updateFields: Record<string, unknown> = {
       updatedAt: new Date(),
     };
@@ -95,7 +101,10 @@ class StaffDutyService {
     }
 
     if (data.shift !== undefined) {
-      updateFields.shift = await commonOptionService.require(data.shift, "STAFF_SHIFT");
+      updateFields.shift = await commonOptionService.require(
+        data.shift,
+        "STAFF_SHIFT",
+      );
     }
 
     if (data.date !== undefined) {
@@ -103,7 +112,10 @@ class StaffDutyService {
     }
 
     if (data.status !== undefined) {
-      updateFields.status = await commonOptionService.require(data.status, "STAFF_DUTY_STATUS");
+      updateFields.status = await commonOptionService.require(
+        data.status,
+        "STAFF_DUTY_STATUS",
+      );
     }
 
     const result = await staffDuties().updateOne(
@@ -129,7 +141,9 @@ class StaffDutyService {
       throw new AppError("Staff duty not found", 404);
     }
 
-    return (await commonOptionService.populate([staffDuty], ["shift", "status"]))[0];
+    return (
+      await commonOptionService.populate([staffDuty], ["shift", "status"])
+    )[0];
   }
 
   async delete(businessId: string, staffDutyId: string) {

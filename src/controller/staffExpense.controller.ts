@@ -71,7 +71,10 @@ class StaffExpenseController {
       throw new AppError("businessId and staffExpenseId are required", 400);
     }
 
-    const result = await staffExpenseService.getById(businessId, staffExpenseId);
+    const result = await staffExpenseService.getById(
+      businessId,
+      staffExpenseId,
+    );
 
     return c.json(result);
   }
@@ -107,7 +110,11 @@ class StaffExpenseController {
         throw new AppError("advance must be a number", 400);
       }
 
-      const result = await staffExpenseService.update(businessId, staffExpenseId, body);
+      const result = await staffExpenseService.update(
+        businessId,
+        staffExpenseId,
+        body,
+      );
 
       return c.json(result);
     } catch (error) {

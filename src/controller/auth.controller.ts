@@ -31,7 +31,11 @@ const ok = (
 // Auth controller handlers for signup, login, token, and password flows.
 export const sendSignupOtp = async (c: Context) => {
   const { email } = await body(c, sendSignupOtpSchema);
-  return ok(c, "OTP email accepted for delivery", await auth.sendSignupOtp(email));
+  return ok(
+    c,
+    "OTP email accepted for delivery",
+    await auth.sendSignupOtp(email),
+  );
 };
 // Verify the OTP sent during signup.
 export const verifySignupOtp = async (c: Context) => {
@@ -42,7 +46,11 @@ export const verifySignupOtp = async (c: Context) => {
 export const verifyPhoneNumber = async (c: Context) => {
   const input = await body(c, firebasePhoneSchema);
   c.header("Cache-Control", "no-store");
-  return ok(c, "Phone number verified", await verifyFirebasePhone(input.phoneNumber, input.fpnvToken));
+  return ok(
+    c,
+    "Phone number verified",
+    await verifyFirebasePhone(input.phoneNumber, input.fpnvToken),
+  );
 };
 // Complete user registration after phone verification.
 export const completeSignup = async (c: Context) =>
@@ -127,11 +135,19 @@ export const sendForgotPasswordOtp = async (c: Context) => {
 // Verify the password reset OTP before allowing a reset.
 export const verifyForgotPasswordOtp = async (c: Context) => {
   const { email, otp } = await body(c, verifySignupOtpSchema);
-  return ok(c, "OTP verified. You may now reset your password.", await auth.verifyPasswordResetOtp(email, otp));
+  return ok(
+    c,
+    "OTP verified. You may now reset your password.",
+    await auth.verifyPasswordResetOtp(email, otp),
+  );
 };
 // Reset the password after OTP verification.
 export const resetPassword = async (c: Context) => {
   const input = await body(c, resetPasswordSchema);
-  await auth.resetPassword(input.email, input.password, input.verificationToken);
+  await auth.resetPassword(
+    input.email,
+    input.password,
+    input.verificationToken,
+  );
   return ok(c, "Password reset successfully. Please log in again.");
 };

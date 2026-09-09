@@ -40,7 +40,7 @@ class elecService {
     return result;
   }
 
-//   update elec Bill
+  //   update elec Bill
   async update(
     businessId: string,
     electricityId: string,
@@ -115,18 +115,18 @@ class elecService {
 
   //   delete bill
   async delete(businessId: string, roomId: string, electricityId: string) {
-   const deleting =  await electricity().findOneAndDelete({
+    const deleting = await electricity().findOneAndDelete({
       _id: new ObjectId(electricityId),
       roomId: new ObjectId(roomId),
       businessId: new ObjectId(businessId),
     });
-    if(!deleting){
-        throw new AppError("Unablet to delete or no data found to delete",404)
+    if (!deleting) {
+      throw new AppError("Unablet to delete or no data found to delete", 404);
     }
     return {
-        "message":"Data deleted successfullt"
-    }
+      message: "Data deleted successfullt",
+    };
   }
 }
 
-export const ElecService = new elecService;
+export const ElecService = new elecService();

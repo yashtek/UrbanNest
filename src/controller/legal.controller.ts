@@ -10,7 +10,11 @@ const create = (type: LegalDocumentType) => async (c: Context) => {
   const input = createLegalDocumentSchema.parse(await c.req.json());
   const document = await createLegalDocument(type, c.get("user").userId, input);
   return c.json(
-    { success: true, message: "Legal document created successfully", data: document },
+    {
+      success: true,
+      message: "Legal document created successfully",
+      data: document,
+    },
     201,
   );
 };

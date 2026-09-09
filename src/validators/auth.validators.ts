@@ -20,9 +20,13 @@ const otp = z.string().regex(/^\d{6}$/, "OTP must be a 6-digit code");
 export const phoneSchema = z.object({ phoneNumber: phone });
 const signupEmail = z.string().trim().toLowerCase().email().max(254);
 export const sendSignupOtpSchema = z.object({ email: signupEmail });
-export const verifySignupOtpSchema = z.object({ email: signupEmail, otp }).strict();
+export const verifySignupOtpSchema = z
+  .object({ email: signupEmail, otp })
+  .strict();
 export const verifyOtpSchema = z.object({ phoneNumber: phone, otp });
-export const firebasePhoneSchema = phoneSchema.extend({ fpnvToken: z.string().trim().min(1).max(8192) });
+export const firebasePhoneSchema = phoneSchema.extend({
+  fpnvToken: z.string().trim().min(1).max(8192),
+});
 export const completeSignupSchema = z.object({
   verificationToken: z.string().regex(/^[a-f0-9]{64}$/),
   phoneNumber: phone,
@@ -47,7 +51,11 @@ export const loginSchema = z.object({
   username: z.string().trim().min(1),
   password: z.string().min(1),
 });
-export const resetPasswordSchema = z.object({ email: signupEmail, password, verificationToken: z.string().regex(/^[a-f0-9]{64}$/) });
+export const resetPasswordSchema = z.object({
+  email: signupEmail,
+  password,
+  verificationToken: z.string().regex(/^[a-f0-9]{64}$/),
+});
 export const usernameQuerySchema = z.object({
   username: z
     .string()
@@ -77,11 +85,7 @@ export const updateProfileSchema = z
       .optional(),
     email: z
       .union([
-        z
-          .string()
-          .trim()
-          .toLowerCase()
-          .email("Invalid email address"),
+        z.string().trim().toLowerCase().email("Invalid email address"),
         z.literal(null),
       ])
       .optional(),

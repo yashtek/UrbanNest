@@ -14,7 +14,11 @@ export const submitFeedback = async (c: Context) => {
   };
 
   return c.json(
-    { success: true, message: "Feedback submitted successfully", data: response },
+    {
+      success: true,
+      message: "Feedback submitted successfully",
+      data: response,
+    },
     201,
   );
 };

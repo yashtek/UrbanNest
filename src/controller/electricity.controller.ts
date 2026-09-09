@@ -109,10 +109,17 @@ export class elecController {
       const electricityId = c.req.param("electricityId");
 
       if (!businessId || !roomId || !electricityId) {
-        throw new AppError("businessId, roomId and electricityId are required", 400);
+        throw new AppError(
+          "businessId, roomId and electricityId are required",
+          400,
+        );
       }
 
-      const result = await ElecService.delete(businessId, roomId, electricityId);
+      const result = await ElecService.delete(
+        businessId,
+        roomId,
+        electricityId,
+      );
 
       return c.json(result);
     } catch (error) {

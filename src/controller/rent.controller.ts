@@ -32,7 +32,7 @@ export class rentController {
     }
   }
 
-//   update rent details
+  //   update rent details
   async updateRentDetails(c: Context) {
     try {
       const rentId = c.req.param("rentId");

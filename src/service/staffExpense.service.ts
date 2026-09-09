@@ -1,6 +1,9 @@
 import { ObjectId } from "mongodb";
 import { AppError } from "../middleware/error.middleware";
-import { staffExpenses, type IStaffExpense } from "../modals/staffExpense.modal";
+import {
+  staffExpenses,
+  type IStaffExpense,
+} from "../modals/staffExpense.modal";
 import { staffs } from "../modals/staff.modal";
 
 export interface CreateStaffExpenseDto {
@@ -70,7 +73,11 @@ class StaffExpenseService {
     return staffExpense;
   }
 
-  async update(businessId: string, staffExpenseId: string, data: UpdateStaffExpenseDto) {
+  async update(
+    businessId: string,
+    staffExpenseId: string,
+    data: UpdateStaffExpenseDto,
+  ) {
     const businessObjectId = new ObjectId(businessId);
     const expenseObjectId = new ObjectId(staffExpenseId);
 
@@ -87,7 +94,9 @@ class StaffExpenseService {
       updatedAt: new Date(),
     };
 
-    const nextStaffId = data.staffId ? new ObjectId(data.staffId) : existingExpense.staffId;
+    const nextStaffId = data.staffId
+      ? new ObjectId(data.staffId)
+      : existingExpense.staffId;
 
     if (data.staffId !== undefined) {
       const staff = await staffs().findOne({

@@ -1,10 +1,7 @@
 import { ObjectId } from "mongodb";
 import { getPagination, type PaginationOptions } from "../utils/pagination";
 import { AppError } from "../middleware/error.middleware";
-import {
-  IRoom,
-  rooms,
-} from "../modals/room.modal";
+import { IRoom, rooms } from "../modals/room.modal";
 import { tenants } from "../modals/tenant.modal";
 import { distributeRoomElectricity } from "./tenant-electricity.service";
 import { commonOptionService } from "./commonOption.service";
@@ -39,7 +36,10 @@ const calculateElectricity = (
   costPerunit: number,
 ) => {
   if (currentReading < previousReading) {
-    throw new AppError("currentReading cannot be less than previousReading", 400);
+    throw new AppError(
+      "currentReading cannot be less than previousReading",
+      400,
+    );
   }
 
   const unitUsed = currentReading - previousReading;
@@ -89,11 +89,17 @@ class RoomService {
 
   async getAll(businessId: string, options: PaginationOptions = {}) {
     const { page, limit, skip } = getPagination(options);
-    if (!ObjectId.isValid(businessId)) throw new AppError("Invalid businessId", 400);
+    if (!ObjectId.isValid(businessId))
+      throw new AppError("Invalid businessId", 400);
     const filter = { businessId: new ObjectId(businessId) };
     const collection = rooms();
     const [rows, total] = await Promise.all([
-      collection.find(filter).sort({ _id: -1 }).skip(skip).limit(limit).toArray(),
+      collection
+        .find(filter)
+        .sort({ _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
       collection.countDocuments(filter),
     ]);
     return {
@@ -157,7 +163,11 @@ class RoomService {
         (updateFields as Record<string, unknown>)[field] = data[field];
       }
     }
-    if (data.status !== undefined) updateFields.status = await commonOptionService.require(data.status, "ROOM_STATUS");
+    if (data.status !== undefined)
+      updateFields.status = await commonOptionService.require(
+        data.status,
+        "ROOM_STATUS",
+      );
 
     await rooms().updateOne(
       { _id: room._id, businessId: room.businessId },
@@ -166,8 +176,13 @@ class RoomService {
 
     await distributeRoomElectricity(room.businessId, room._id);
 
-    const updated = await rooms().findOne({ _id: room._id, businessId: room.businessId });
-    return updated ? (await commonOptionService.populate([updated], ["status"]))[0] : null;
+    const updated = await rooms().findOne({
+      _id: room._id,
+      businessId: room.businessId,
+    });
+    return updated
+      ? (await commonOptionService.populate([updated], ["status"]))[0]
+      : null;
   }
 
   async delete(businessId: string, roomId: string) {

@@ -17,13 +17,15 @@ class StaffDutyController {
         throw new AppError("staffId is required", 400);
       }
 
-      if (typeof body?.shift !== "string" || !body.shift.trim()) throw new AppError("shift id is required", 400);
+      if (typeof body?.shift !== "string" || !body.shift.trim())
+        throw new AppError("shift id is required", 400);
 
       if (typeof body?.date !== "string" && !(body.date instanceof Date)) {
         throw new AppError("date is required", 400);
       }
 
-      if (typeof body?.status !== "string" || !body.status.trim()) throw new AppError("status id is required", 400);
+      if (typeof body?.status !== "string" || !body.status.trim())
+        throw new AppError("status id is required", 400);
 
       const result = await staffDutyService.create(businessId, {
         staffId: body.staffId,
@@ -82,7 +84,11 @@ class StaffDutyController {
         throw new AppError("shift must be a string", 400);
       }
 
-      if (body?.date !== undefined && typeof body.date !== "string" && !(body.date instanceof Date)) {
+      if (
+        body?.date !== undefined &&
+        typeof body.date !== "string" &&
+        !(body.date instanceof Date)
+      ) {
         throw new AppError("date must be a string", 400);
       }
 
@@ -90,7 +96,11 @@ class StaffDutyController {
         throw new AppError("status must be a string", 400);
       }
 
-      const result = await staffDutyService.update(businessId, staffDutyId, body);
+      const result = await staffDutyService.update(
+        businessId,
+        staffDutyId,
+        body,
+      );
 
       return c.json(result);
     } catch (error) {

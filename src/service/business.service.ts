@@ -54,7 +54,12 @@ export class BusinessService {
     const filter = { owner_id };
     const collection = businesses();
     const [data, total] = await Promise.all([
-      collection.find(filter).sort({ _id: -1 }).skip(skip).limit(limit).toArray(),
+      collection
+        .find(filter)
+        .sort({ _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
       collection.countDocuments(filter),
     ]);
     return {
@@ -89,25 +94,24 @@ export class BusinessService {
 
   async delete(id: string) {
     // Delete lower-level data first
-  await Promise.all([
-    rents().deleteMany({
-      businessId:new ObjectId(id),
-    }),
-    electricity().deleteMany({
-     businessId:new ObjectId(id),
-    }),
-    tenants().deleteMany({
-      businessId:new ObjectId(id),
-    }),
-  ]);
+    await Promise.all([
+      rents().deleteMany({
+        businessId: new ObjectId(id),
+      }),
+      electricity().deleteMany({
+        businessId: new ObjectId(id),
+      }),
+      tenants().deleteMany({
+        businessId: new ObjectId(id),
+      }),
+    ]);
 
-     await rooms().deleteOne({
-       businessId:new ObjectId(id),
-    })
-     await businesses().deleteOne({
+    await rooms().deleteOne({
+      businessId: new ObjectId(id),
+    });
+    await businesses().deleteOne({
       _id: new ObjectId(id),
     });
-    
 
     return {
       message: "Business deleted successfully",
